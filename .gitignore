@@ -16,7 +16,7 @@ xcuserdata/
 DerivedData/
 
 # ===== SIGNING (CRITICAL) =====
-xcconfigs/Local.xcconfig
+Local.xcconfig
 
 # ===== SWIFT PACKAGE MANAGER =====
 .build/
