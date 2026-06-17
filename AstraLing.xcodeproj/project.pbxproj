@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		61A924332FE22E0700693D7D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 61A924322FE22E0700693D7D /* FirebaseFirestore */; };
 		76ADF2522FDEAA74008E2EE4 /* Base.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 76ADF2512FDEAA74008E2EE4 /* Base.xcconfig */; };
 /* End PBXBuildFile section */
 
@@ -28,18 +29,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				61A924332FE22E0700693D7D /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		61A924312FE22E0700693D7D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		7688A0942FDEA07600F2C7CC = {
 			isa = PBXGroup;
 			children = (
 				7688A09F2FDEA07600F2C7CC /* AstraLing */,
 				7688A09E2FDEA07600F2C7CC /* Products */,
 				76ADF2512FDEAA74008E2EE4 /* Base.xcconfig */,
+				61A924312FE22E0700693D7D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -71,6 +81,7 @@
 			);
 			name = AstraLing;
 			packageProductDependencies = (
+				61A924322FE22E0700693D7D /* FirebaseFirestore */,
 			);
 			productName = AstraLing;
 			productReference = 7688A09D2FDEA07600F2C7CC /* AstraLing.app */;
@@ -100,6 +111,9 @@
 			);
 			mainGroup = 7688A0942FDEA07600F2C7CC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				61A924302FE22C4100693D7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7688A09E2FDEA07600F2C7CC /* Products */;
 			projectDirPath = "";
@@ -168,6 +182,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = ML8TNDJ77V;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -232,6 +247,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = ML8TNDJ77V;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -262,6 +278,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ML8TNDJ77V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -297,6 +314,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ML8TNDJ77V;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -345,6 +363,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		61A924302FE22C4100693D7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.15.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		61A924322FE22E0700693D7D /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 61A924302FE22C4100693D7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7688A0952FDEA07600F2C7CC /* Project object */;
 }
