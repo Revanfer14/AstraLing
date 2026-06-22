@@ -6,6 +6,6 @@
 //
 
 enum AppRole: String, Codable, CaseIterable {
-    case customer
-    case merchant
+    case customer = "Customer"
+    case merchant = "Merchant"
 }

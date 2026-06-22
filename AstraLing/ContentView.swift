@@ -18,7 +18,7 @@ struct ContentView: View {
         switch role {
         case .customer: CustomerOnboardingView()
         case .merchant: MerchantOnboardingView()
-        case nil:       RoleSelectionView(selectedRoleRaw: $selectedRoleRaw)
+        case nil:       LoginView(selectedRoleRaw: $selectedRoleRaw)
         }
     }
 }

@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		61A924332FE22E0700693D7D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 61A924322FE22E0700693D7D /* FirebaseFirestore */; };
+		76ADF2522FDEAA74008E2EE4 /* Base.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 76ADF2512FDEAA74008E2EE4 /* Base.xcconfig */; };
 		AA0001012FE22E0700693D7D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AA0001002FE22E0700693D7D /* FirebaseAuth */; };
 		BB0001012FE22E0700693D7D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = BB0001002FE22E0700693D7D /* FirebaseStorage */; };
-		76ADF2522FDEAA74008E2EE4 /* Base.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 76ADF2512FDEAA74008E2EE4 /* Base.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */

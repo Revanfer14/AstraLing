@@ -10,6 +10,8 @@ import SwiftUI
 struct CustomerOnboardingView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     
+    @EnvironmentObject var authViewModel: AuthViewModel
+    
     var body: some View {
         ZStack {
             Text("Hello, Customer!")
@@ -18,7 +20,8 @@ struct CustomerOnboardingView: View {
                 HStack {
                     Spacer()
                     
-                    Button("Ganti Peran") {
+                    Button("Logout") {
+                        authViewModel.logout()
                         selectedRoleRaw = ""
                     }
                     .padding()
