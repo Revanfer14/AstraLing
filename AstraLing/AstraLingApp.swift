@@ -15,7 +15,7 @@ struct AstraLingApp: App {
     }
     var body: some Scene {
         WindowGroup {
-            RoleSelectionView()
+            ContentView()
         }
     }
 }

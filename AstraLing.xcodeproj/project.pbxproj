@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		61A924332FE22E0700693D7D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 61A924322FE22E0700693D7D /* FirebaseFirestore */; };
+		AA0001012FE22E0700693D7D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = AA0001002FE22E0700693D7D /* FirebaseAuth */; };
+		BB0001012FE22E0700693D7D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = BB0001002FE22E0700693D7D /* FirebaseStorage */; };
 		76ADF2522FDEAA74008E2EE4 /* Base.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 76ADF2512FDEAA74008E2EE4 /* Base.xcconfig */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +32,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				61A924332FE22E0700693D7D /* FirebaseFirestore in Frameworks */,
+				AA0001012FE22E0700693D7D /* FirebaseAuth in Frameworks */,
+				BB0001012FE22E0700693D7D /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,6 +86,8 @@
 			name = AstraLing;
 			packageProductDependencies = (
 				61A924322FE22E0700693D7D /* FirebaseFirestore */,
+				AA0001002FE22E0700693D7D /* FirebaseAuth */,
+				BB0001002FE22E0700693D7D /* FirebaseStorage */,
 			);
 			productName = AstraLing;
 			productReference = 7688A09D2FDEA07600F2C7CC /* AstraLing.app */;
@@ -382,6 +388,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 61A924302FE22C4100693D7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		AA0001002FE22E0700693D7D /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 61A924302FE22C4100693D7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		BB0001002FE22E0700693D7D /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 61A924302FE22C4100693D7D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
