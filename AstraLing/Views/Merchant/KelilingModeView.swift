@@ -37,8 +37,15 @@ struct KelilingModeView: View {
 
     @State private var isVisible = true
     @State private var selectedDetent: PresentationDetent = expandedDetent
+    @State private var activePing: PinItem? = nil
+    @State private var messageText = ""
 
     private let merchantCenter = CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
+    
+    @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
+        span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
+    ))
 
     private let allPings: [PinItem] = [
         PinItem(initial: "E", name: "Erin", distanceLabel: "120 m · 2 menit lalu",
@@ -67,39 +74,86 @@ struct KelilingModeView: View {
         ZStack {
             mapLayer
 
-            if !isVisible {
+            if !isVisible && activePing == nil {
                 dimOverlay
             }
 
             topGradient
 
-            if isVisible {
+            if isVisible && activePing == nil {
                 mapControls
             }
 
-            floatingHeader
+            if let pin = activePing {
+                topBar(for: pin)
+            } else {
+                floatingHeader
+            }
         }
         .ignoresSafeArea()
         .sheet(isPresented: Binding(get: { isVisible }, set: { _ in })) {
-            sheetContent
-                .presentationDetents([minimizedDetent, expandedDetent, .large], selection: $selectedDetent)
-                .presentationBackgroundInteraction(.enabled)
-                .presentationDragIndicator(.visible)
-                .interactiveDismissDisabled(true)
-                .presentationCornerRadius(34)
+            if let pin = activePing {
+                chatSheetContent(for: pin)
+                    .presentationDetents([expandedDetent, .medium, .large])
+                    .presentationBackgroundInteraction(.enabled)
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled(true)
+                    .presentationCornerRadius(34)
+            } else {
+                sheetContent
+                    .presentationDetents([minimizedDetent, expandedDetent, .large], selection: $selectedDetent)
+                    .presentationBackgroundInteraction(.enabled)
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled(true)
+                    .presentationCornerRadius(34)
+            }
         }
         .onChange(of: isVisible) { _, newValue in
             if newValue { selectedDetent = expandedDetent }
         }
     }
+    
+    private func setActivePing(_ pin: PinItem?) {
+        withAnimation {
+            activePing = pin
+            if let pin = pin {
+                let lats = [merchantCenter.latitude, pin.coordinate.latitude]
+                let lons = [merchantCenter.longitude, pin.coordinate.longitude]
+                let centerLat = (lats.min()! + lats.max()!) / 2
+                let centerLon = (lons.min()! + lons.max()!) / 2
+                let spanLat = max((lats.max()! - lats.min()!) * 3.5, 0.006)
+                let spanLon = max((lons.max()! - lons.min()!) * 3.5, 0.006)
+                mapPosition = .region(MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+                    span: MKCoordinateSpan(latitudeDelta: spanLat, longitudeDelta: spanLon)
+                ))
+            } else {
+                mapPosition = .region(MKCoordinateRegion(
+                    center: merchantCenter,
+                    span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
+                ))
+            }
+        }
+    }
 
     private var mapLayer: some View {
-        Map(initialPosition: .region(MKCoordinateRegion(
-            center: merchantCenter,
-            span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
-        ))) {
-            if isVisible {
+        Map(position: $mapPosition) {
+            if let pin = activePing {
+                MapPolyline(coordinates: [merchantCenter, pin.coordinate])
+                    .stroke(
+                        Color(red: 0, green: 0.271, blue: 0.898),
+                        style: StrokeStyle(lineWidth: 7, lineCap: .round, dash: [0, 13])
+                    )
 
+                Annotation("", coordinate: merchantCenter) {
+                    merchantPin
+                }
+
+                Annotation("", coordinate: pin.coordinate) {
+                    customerPin(pin)
+                }
+            } else {
+                if isVisible {
                     MapCircle(center: merchantCenter, radius: 500)
                         .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04))
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.4), lineWidth: 2)
@@ -115,14 +169,15 @@ struct KelilingModeView: View {
                     ForEach(allPings) { pin in
                         Annotation("", coordinate: pin.coordinate) {
                             customerPin(pin)
+                                .onTapGesture { setActivePing(pin) }
                         }
-                    
+                    }
                 }
-            }
 
-            Annotation("", coordinate: merchantCenter) {
-                merchantPin
-                    .opacity(isVisible ? 1 : 0.5)
+                Annotation("", coordinate: merchantCenter) {
+                    merchantPin
+                        .opacity(isVisible ? 1 : 0.5)
+                }
             }
         }
         .mapStyle(.standard(elevation: .flat))
@@ -198,6 +253,67 @@ struct KelilingModeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(false)
         .ignoresSafeArea()
+    }
+    
+    private func topBar(for pin: PinItem) -> some View {
+        HStack(spacing: 8) {
+            Button { setActivePing(nil) } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white)
+                        .frame(width: 46, height: 46)
+                        .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 6, x: 0, y: 2)
+                    Image(systemName: "chevron.left")
+                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .font(.system(size: 16, weight: .semibold))
+                }
+            }
+
+            HStack(spacing: 9) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(Color(red: 0.906, green: 0.965, blue: 0.937))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: "figure.walk")
+                        .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                        .font(.system(size: 15, weight: .medium))
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Kamu sedang OTW ke \(pin.name)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .lineLimit(1)
+                    Text("\(pin.name) sudah diberi tahu · 120 m lagi")
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 4)
+
+                Text("± 2 mnt")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(red: 0.839, green: 0.914, blue: 1))
+                    )
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 10)
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.white)
+                    .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.16), radius: 10, x: 0, y: 6)
+            )
+        }
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, 61)
     }
 
     private var floatingHeader: some View {
@@ -385,7 +501,7 @@ struct KelilingModeView: View {
 
                 Spacer()
 
-                Button {} label: {
+                Button { setActivePing(pin) } label: {
                     Text("Terima Ping")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white)
@@ -404,6 +520,186 @@ struct KelilingModeView: View {
                     .frame(height: 1)
             }
         }
+    }
+    
+    private func chatSheetContent(for pin: PinItem) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                        .frame(width: 48, height: 48)
+                    Text(pin.initial)
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(pin.name)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    Text("Menunggu kamu · 120 m")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                }
+
+                Spacer()
+            }
+            .padding(12)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack {
+                        Spacer()
+                        Text("Hari ini · 14.42")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
+                        Spacer()
+                    }
+                    .padding(.top, 14)
+
+                    receivedBubble("Pak, posisi di mana? mau beli cimol 2 bungkus ya", time: "14.41")
+                    sentBubble("Saya OTW ya bu, 2 menit lagi sampai 🙏", time: "14.42")
+                    receivedBubble("Oke pak ditunggu, depan pagar hijau ya", time: "14.42")
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 16)
+            }
+            .background(Color(red: 0.929, green: 0.965, blue: 1))
+
+            VStack(spacing: 11) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        quickReplyChip("Sudah sampai")
+                        quickReplyChip("Sebentar lagi")
+                        quickReplyChip("Pesanan siap")
+                    }
+                    .padding(.horizontal, 18)
+                }
+
+                HStack(spacing: 9) {
+                    TextField("Tulis pesan ke \(pin.name)…", text: $messageText)
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
+
+                    Button {} label: {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(red: 0.106, green: 0.31, blue: 0.878))
+                                .frame(width: 40, height: 40)
+                            Image(systemName: "paperplane.fill")
+                                .foregroundStyle(.white)
+                                .font(.system(size: 14))
+                        }
+                    }
+                }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color(red: 0.965, green: 0.984, blue: 1))
+                )
+                .padding(.horizontal, 18)
+            }
+            .padding(.top, 13)
+            .padding(.bottom, 24)
+            .background(
+                Color.white
+                    .overlay(
+                        Rectangle()
+                            .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
+                            .frame(height: 1),
+                        alignment: .top
+                    )
+            )
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func receivedBubble(_ text: String, time: String) -> some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 3.6) {
+                Text(text)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149))
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Spacer()
+                    Text(time)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149).opacity(0.6))
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 15, bottomLeadingRadius: 5,
+                    bottomTrailingRadius: 15, topTrailingRadius: 15
+                )
+                .fill(Color.white)
+                .overlay(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 15, bottomLeadingRadius: 5,
+                        bottomTrailingRadius: 15, topTrailingRadius: 15
+                    )
+                    .stroke(Color(red: 0.933, green: 0.945, blue: 0.965), lineWidth: 1)
+                )
+            )
+            .frame(maxWidth: 280, alignment: .leading)
+
+            Spacer(minLength: 56)
+        }
+        .padding(.top, 10)
+    }
+
+    @ViewBuilder
+    private func sentBubble(_ text: String, time: String) -> some View {
+        HStack(alignment: .bottom) {
+            Spacer(minLength: 56)
+
+            VStack(alignment: .leading, spacing: 3.6) {
+                Text(text)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.white)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Spacer()
+                    Text(time)
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Color.white.opacity(0.6))
+                }
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 9)
+            .background(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 15, bottomLeadingRadius: 15,
+                    bottomTrailingRadius: 5, topTrailingRadius: 15
+                )
+                .fill(Color(red: 0.024, green: 0.369, blue: 1))
+            )
+            .frame(maxWidth: 280, alignment: .leading)
+        }
+        .padding(.top, 10)
+    }
+
+    private func quickReplyChip(_ label: String) -> some View {
+        Text(label)
+            .font(.system(size: 13))
+            .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(red: 0.933, green: 0.953, blue: 1))
+            )
     }
 }
 
