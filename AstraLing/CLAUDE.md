@@ -14,6 +14,8 @@ Before editing a role-specific file, jump to that role's part. Before adding *an
 file, check the **routing table in §0.3**. The Firestore schema in **§0.6 is the
 contract** — match field names exactly.
 
+Please don't use any comments (except one when making new file in Xcode, there's an automatic comment made by Xcode, don't remove that). Just don't add any comments like MARK: , or any code explainations. I want to keep the code clean and good.
+
 ---
 ---
 
