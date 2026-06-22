@@ -39,6 +39,8 @@ struct KelilingModeView: View {
     @State private var selectedDetent: PresentationDetent = expandedDetent
     @State private var activePing: PinItem? = nil
     @State private var messageText = ""
+    @State private var showDashboard = false
+    @State private var hideSheet = false
 
     private let merchantCenter = CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
     
@@ -91,7 +93,7 @@ struct KelilingModeView: View {
             }
         }
         .ignoresSafeArea()
-        .sheet(isPresented: Binding(get: { isVisible }, set: { _ in })) {
+        .sheet(isPresented: Binding(get: { isVisible && !hideSheet }, set: { _ in })) {
             if let pin = activePing {
                 chatSheetContent(for: pin)
                     .presentationDetents([expandedDetent, .medium, .large])
@@ -110,6 +112,12 @@ struct KelilingModeView: View {
         }
         .onChange(of: isVisible) { _, newValue in
             if newValue { selectedDetent = expandedDetent }
+        }
+        .onChange(of: showDashboard) { _, isShowing in
+            if !isShowing { hideSheet = false }
+        }
+        .fullScreenCover(isPresented: $showDashboard) {
+            MerchantDashboardView()
         }
     }
     
@@ -340,7 +348,11 @@ struct KelilingModeView: View {
 
                 Spacer()
 
-                Button {} label: {
+                Button {
+                    hideSheet = true
+                    
+                    showDashboard = true
+                } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(Color(red: 0.929, green: 0.965, blue: 1))
