@@ -8,14 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
+    
+    private var role: AppRole? {
+        AppRole(rawValue: selectedRoleRaw)
+    }
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        switch role {
+        case .customer: CustomerOnboardingView()
+        case .merchant: MerchantOnboardingView()
+        case nil:       RoleSelectionView(selectedRoleRaw: $selectedRoleRaw)
         }
-        .padding()
     }
 }
 
