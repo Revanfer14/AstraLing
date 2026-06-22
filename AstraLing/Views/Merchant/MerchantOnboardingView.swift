@@ -8,32 +8,8 @@
 import SwiftUI
 
 struct MerchantOnboardingView: View {
-    @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
-    
-    @EnvironmentObject var authViewModel: AuthViewModel
-    
     var body: some View {
-        ZStack {
-            Text("Hello, Merchant!")
-            
-            VStack {
-                HStack {
-                    Spacer()
-                    
-                    Button("Logout") {
-                        authViewModel.logout()
-                        selectedRoleRaw = ""
-                    }
-                    .padding()
-                    .foregroundColor(.white)
-                    .background(Color.red)
-                    .cornerRadius(12)
-                    .padding()
-                }
-                
-                Spacer()
-            }
-        }
+        KelilingModeView()
     }
 }
 
