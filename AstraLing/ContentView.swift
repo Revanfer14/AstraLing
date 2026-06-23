@@ -11,7 +11,7 @@ struct ContentView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     
     private var role: AppRole? {
-        AppRole(rawValue: selectedRoleRaw)
+        AppRole(normalizing: selectedRoleRaw)
     }
     
     var body: some View {
