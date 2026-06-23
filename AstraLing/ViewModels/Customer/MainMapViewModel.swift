@@ -51,6 +51,21 @@ final class MainMapViewModel: ObservableObject {
         listener = nil
     }
 
+    func isFavorite(_ uid: String) -> Bool { favoriteUids.contains(uid) }
+
+    func toggleFavorite(_ uid: String) {
+        let nowFavorite = !favoriteUids.contains(uid)
+        if nowFavorite { favoriteUids.insert(uid) } else { favoriteUids.remove(uid) }
+        rebuild()
+        Task {
+            guard let me = Auth.auth().currentUser?.uid else { return }
+            let op: Any = nowFavorite
+                ? FieldValue.arrayUnion([uid])
+                : FieldValue.arrayRemove([uid])
+            try? await db.collection("customers").document(me).updateData(["favorites": op])
+        }
+    }
+
     func scatterMerchantsAroundMe() {
         guard let center = userLocation else { return }
         let lat = center.coordinate.latitude
