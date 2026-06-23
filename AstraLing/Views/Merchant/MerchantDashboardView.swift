@@ -9,9 +9,9 @@ import SwiftUI
 
 struct MerchantDashboardView: View {
     @Environment(\.dismiss) private var dismiss
-
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 headerSection
                     .padding(.top, 16)
@@ -49,6 +49,7 @@ struct MerchantDashboardView: View {
             }
         }
         .background(Color(red: 0.988, green: 0.988, blue: 0.988).ignoresSafeArea())
+        }
     }
 
     private var headerSection: some View {
@@ -128,9 +129,15 @@ struct MerchantDashboardView: View {
             }
 
             HStack(spacing: 10) {
-                quickActionButton(icon: "arrow.up", label: "Transfer Saldo")
-                quickActionButton(icon: "qrcode", label: "QR Saya")
-                quickActionButton(icon: "square.and.pencil", label: "Edit Profile")
+                NavigationLink(destination: TransferSaldoView().navigationBarBackButtonHidden(true)) {
+                    quickActionItem(icon: "arrow.up", label: "Transfer Saldo")
+                }
+                Button {} label: {
+                    quickActionItem(icon: "qrcode", label: "QR Saya")
+                }
+                Button {} label: {
+                    quickActionItem(icon: "square.and.pencil", label: "Edit Profile")
+                }
             }
             .padding(.top, 11)
         }
@@ -142,7 +149,7 @@ struct MerchantDashboardView: View {
         )
     }
 
-    private func quickActionButton(icon: String, label: String) -> some View {
+    private func quickActionItem(icon: String, label: String) -> some View {
         VStack(spacing: 8) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
