@@ -10,28 +10,26 @@ import SwiftUI
 struct MerchantMapPin: View {
     let name: String
 
-    private let blue = Color(red: 0/255, green: 69/255, blue: 229/255)
-
     var body: some View {
         VStack(spacing: 6) {
             Text(name)
                 .font(.system(size: 12, weight: .bold))
-                .foregroundColor(blue)
+                .foregroundColor(.appPrimary)
                 .multilineTextAlignment(.center)
-                .shadow(color: Color(red: 208/255, green: 214/255, blue: 226/255).opacity(0.5), radius: 25, y: 6)
+                .shadow(color: Color.Token.shadowBlueGrey.opacity(0.5), radius: 25, y: 6)
 
             ZStack {
                 Circle()
-                    .fill(blue)
+                    .fill(Color.appPrimary)
                     .overlay(
                         Circle()
-                            .stroke(blue.opacity(0.3), lineWidth: 3)
+                            .stroke(Color.appPrimary.opacity(0.3), lineWidth: 3)
                             .padding(-3)
                     )
 
                 Image(systemName: "fork.knife")
                     .font(.system(size: 9, weight: .regular))
-                    .foregroundColor(Color(red: 237/255, green: 246/255, blue: 255/255))
+                    .foregroundColor(.appSurfaceBlue)
             }
             .frame(width: 28, height: 28)
         }

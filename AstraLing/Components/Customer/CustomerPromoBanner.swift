@@ -13,10 +13,10 @@ struct CustomerPromoBanner: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Akses Fitur Masih Terbatas?")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(red: 0.97, green: 0.75, blue: 0.60))
+                    .foregroundColor(Color.Token.promoTitle)
                 Text("Upgrade yuk, biar bisa transfer & tarik tunai!")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(red: 0.96, green: 0.67, blue: 0.48))
+                    .foregroundColor(Color.Token.promoSubtitle)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -25,18 +25,18 @@ struct CustomerPromoBanner: View {
                 HStack(spacing: 4) {
                     Text("Upgrade")
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color(red: 0.94, green: 0.67, blue: 0.48))
+                        .foregroundColor(Color.Token.promoButtonText)
                     Image(systemName: "arrow.right")
                         .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(Color(red: 0.94, green: 0.67, blue: 0.48))
+                        .foregroundColor(Color.Token.promoButtonText)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
-                .background(Color(red: 0.99, green: 0.95, blue: 0.92))
+                .background(Color.Token.promoButtonBg)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .stroke(Color(red: 0.98, green: 0.87, blue: 0.76), lineWidth: 1)
+                        .stroke(Color.Token.promoButtonBorder, lineWidth: 1)
                 )
             }
         }
@@ -44,7 +44,7 @@ struct CustomerPromoBanner: View {
         .padding(.vertical, 14)
         .background(
             LinearGradient(
-                colors: [Color(red: 0.98, green: 0.55, blue: 0.25), Color(red: 0.97, green: 0.45, blue: 0.15)],
+                colors: [Color.Token.promoGradStart, Color.Token.promoGradEnd],
                 startPoint: .leading, endPoint: .trailing
             )
         )

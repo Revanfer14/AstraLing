@@ -12,8 +12,6 @@ struct CustomerBalanceCard: View {
     let astraPoints: Int
     let onAstraPoints: () -> Void
 
-    private let appBlue = Color(red: 0.25, green: 0.47, blue: 0.94)
-
     var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 10) {
@@ -25,24 +23,24 @@ struct CustomerBalanceCard: View {
                     HStack(spacing: 4) {
                         Text("Saldo")
                             .font(.system(size: 12))
-                            .foregroundColor(Color(UIColor.secondaryLabel))
+                            .foregroundColor(Color.appTextSecondary)
                         Image(systemName: "eye.fill")
                             .font(.system(size: 11))
-                            .foregroundColor(Color(UIColor.secondaryLabel))
+                            .foregroundColor(Color.appTextSecondary)
                     }
                     Text(balance.rupiah)
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(Color(UIColor.label))
+                        .foregroundColor(Color.appTextPrimary)
                 }
 
                 Spacer()
 
                 Rectangle()
-                    .fill(Color(UIColor.separator))
+                    .fill(Color.appDivider)
                     .frame(width: 1, height: 44)
 
-                BalanceActionButton(systemName: "plus", label: "Top Up", tint: appBlue)
-                BalanceActionButton(systemName: "arrow.up.right", label: "Transfer", tint: appBlue)
+                BalanceActionButton(systemName: "plus", label: "Top Up", tint: .Token.gradBlueTop)
+                BalanceActionButton(systemName: "arrow.up.right", label: "Transfer", tint: .Token.gradBlueTop)
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -57,7 +55,7 @@ struct CustomerBalanceCard: View {
                         label: "AstraPoints",
                         value: "\(astraPoints)",
                         badge: "Untung!",
-                        badgeColor: Color(red: 0.53, green: 0.18, blue: 1.0)
+                        badgeColor: Color.Token.pointsBadge
                     )
                 }
                 .buttonStyle(.plain)
@@ -72,7 +70,7 @@ struct CustomerBalanceCard: View {
             .padding(.top, 10)
             .padding(.bottom, 12)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.appBackground)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
     }
@@ -96,7 +94,7 @@ private struct BalanceActionButton: View {
                 }
                 Text(label)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
+                    .foregroundColor(Color.appTextSecondary)
             }
             .frame(width: 60)
         }
@@ -119,7 +117,7 @@ private struct PointsBox: View {
                     .frame(width: 14, height: 14)
                 Text(label)
                     .font(.system(size: 10))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
+                    .foregroundColor(Color.appTextSecondary)
                 if let badge {
                     Text(badge)
                         .font(.system(size: 8, weight: .semibold))
@@ -132,14 +130,14 @@ private struct PointsBox: View {
             }
             Text(value)
                 .font(.system(size: 14))
-                .foregroundColor(Color(UIColor.label))
+                .foregroundColor(Color.appTextPrimary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .overlay(
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color(UIColor.separator), lineWidth: 1)
+                .stroke(Color.appDivider, lineWidth: 1)
         )
     }
 }

@@ -23,9 +23,9 @@ struct AstraLingOnboardingView: View {
         ZStack {
             LinearGradient(
                 stops: [
-                    .init(color: Color(red: 131/255, green: 194/255, blue: 255/255).opacity(0.4), location: 0),
-                    .init(color: Color(red: 238/255, green: 232/255, blue: 9/255).opacity(0.25), location: 0.45),
-                    .init(color: .white, location: 0.72)
+                    .init(color: Color.Token.blue300.opacity(0.4), location: 0),
+                    .init(color: Color.appAccent.opacity(0.25), location: 0.45),
+                    .init(color: Color.appSurface, location: 0.72)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -39,7 +39,7 @@ struct AstraLingOnboardingView: View {
                             Text(slides[index].title)
                                 .font(.system(size: 28, weight: .bold))
                                 .multilineTextAlignment(.center)
-                                .foregroundColor(.black)
+                                .foregroundColor(.appTextPrimary)
                                 .padding(.horizontal, 24)
 
                             Image(slides[index].asset)
@@ -59,11 +59,11 @@ struct AstraLingOnboardingView: View {
                     ForEach(0..<slides.count, id: \.self) { index in
                         if index == selection {
                             Capsule()
-                                .fill(Color(red: 30/255, green: 124/255, blue: 255/255))
+                                .fill(Color.appTint)
                                 .frame(width: 30, height: 10)
                         } else {
                             Circle()
-                                .fill(Color(red: 214/255, green: 233/255, blue: 255/255))
+                                .fill(Color.Token.blue100)
                                 .frame(width: 10, height: 10)
                         }
                     }
@@ -78,10 +78,10 @@ struct AstraLingOnboardingView: View {
                 } label: {
                     Text("Mulai jelajahi")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.appTextOnPrimary)
                         .frame(width: 300)
                         .padding(16)
-                        .background(Color(red: 0/255, green: 69/255, blue: 229/255))
+                        .background(Color.appPrimary)
                         .cornerRadius(20)
                 }
                 .padding(.bottom, 44)

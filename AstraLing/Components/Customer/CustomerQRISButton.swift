@@ -15,7 +15,7 @@ struct CustomerQRISButton: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color(red: 0.25, green: 0.47, blue: 0.94), Color(red: 0.18, green: 0.35, blue: 0.80)],
+                                colors: [Color.Token.gradBlueTop, Color.Token.gradBlueBottom],
                                 startPoint: .top, endPoint: .bottom
                             )
                         )
@@ -31,7 +31,7 @@ struct CustomerQRISButton: View {
                 }
                 Text("Bayar")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
+                    .foregroundColor(.appTextSecondary)
             }
         }
         .buttonStyle(.plain)

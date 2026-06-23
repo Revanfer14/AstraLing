@@ -10,9 +10,6 @@ import SwiftUI
 struct CustomerHomeHeader: View {
     let name: String
 
-    private let gradientTop    = Color(red: 0.25, green: 0.47, blue: 0.94)
-    private let gradientBottom = Color(red: 0.18, green: 0.35, blue: 0.80)
-
     private var firstName: String {
         name.split(separator: " ").first.map(String.init) ?? (name.isEmpty ? "there" : name)
     }
@@ -20,7 +17,7 @@ struct CustomerHomeHeader: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             LinearGradient(
-                colors: [gradientTop, gradientBottom],
+                colors: [Color.Token.gradBlueTop, Color.Token.gradBlueBottom],
                 startPoint: .top, endPoint: .bottom
             )
             .frame(height: 270)
@@ -31,7 +28,7 @@ struct CustomerHomeHeader: View {
                 HStack {
                     Text("Hi, \(firstName)")
                         .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(Color(red: 0.70, green: 0.80, blue: 0.95))
+                        .foregroundColor(Color.Token.headerName)
                     Spacer()
                     Image(systemName: "bell.fill")
                         .font(.system(size: 18))
@@ -41,7 +38,7 @@ struct CustomerHomeHeader: View {
 
                 Text("Bayar apa aja,\ndapat cashback\nAstraPoints!")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(Color(red: 0.73, green: 0.80, blue: 0.95))
+                    .foregroundColor(Color.Token.headerTagline)
                     .lineSpacing(5)
                     .padding(.top, 8)
                     .padding(.horizontal, 30)
@@ -51,10 +48,10 @@ struct CustomerHomeHeader: View {
                         HStack(spacing: 4) {
                             Text("Cek promo")
                                 .font(.system(size: 13))
-                                .foregroundColor(Color(red: 0.61, green: 0.72, blue: 0.92))
+                                .foregroundColor(Color.Token.headerLink)
                             Image(systemName: "arrow.right")
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(Color(red: 0.61, green: 0.72, blue: 0.92))
+                                .foregroundColor(Color.Token.headerLink)
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)

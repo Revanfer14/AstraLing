@@ -25,7 +25,6 @@ struct MainMapView: View {
     @State private var mapCenter: CLLocationCoordinate2D?
     @State private var sheetDetent: PresentationDetent = .height(360)
 
-    private let blue = Color(red: 0/255, green: 69/255, blue: 229/255)
     private let minSheetHeight: CGFloat = 96
 
     var body: some View {
@@ -49,7 +48,7 @@ struct MainMapView: View {
                     .presentationBackgroundInteraction(.enabled(upThrough: .large))
                     .interactiveDismissDisabled()
                     .presentationCornerRadius(26)
-                    .presentationBackground(.white)
+                    .presentationBackground(Color.appSurface)
             }
 
             topBar
@@ -62,9 +61,9 @@ struct MainMapView: View {
                 } label: {
                     Image(systemName: "location.fill")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(blue)
+                        .foregroundColor(.appPrimary)
                         .frame(width: 46, height: 46)
-                        .background(Color.white)
+                        .background(Color.appSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                         .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
                 }
@@ -81,9 +80,9 @@ struct MainMapView: View {
             } label: {
                 Image(systemName: "mappin.and.ellipse")
                     .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(blue)
+                    .foregroundColor(.appPrimary)
                     .frame(width: 46, height: 46)
-                    .background(Color.white)
+                    .background(Color.appSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
             }
@@ -132,9 +131,9 @@ struct MainMapView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(blue)
+                    .foregroundColor(.appPrimary)
                     .frame(width: 46, height: 46)
-                    .background(Color.white)
+                    .background(Color.appSurface)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
             }
@@ -144,18 +143,18 @@ struct MainMapView: View {
                     HStack(spacing: 4) {
                         Text("Saldo AstraPay kamu")
                             .font(.system(size: 14))
-                            .foregroundColor(Color(UIColor.systemGray))
+                            .foregroundColor(.appTextTertiary)
                         Button {
                             hideBalance.toggle()
                         } label: {
                             Image(systemName: hideBalance ? "eye.slash" : "eye")
                                 .font(.system(size: 14))
-                                .foregroundColor(Color(UIColor.systemGray))
+                                .foregroundColor(.appTextTertiary)
                         }
                     }
                     Text(hideBalance ? "Rp ••••••" : vm.balance.rupiah)
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(.appTextPrimary)
                 }
 
                 Spacer()
@@ -163,14 +162,14 @@ struct MainMapView: View {
                 Button {} label: {
                     Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.appTextOnPrimary)
                         .frame(width: 46, height: 46)
-                        .background(blue)
+                        .background(Color.appPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                 }
             }
             .padding(14)
-            .background(Color.white)
+            .background(Color.appSurface)
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
         }
@@ -182,7 +181,7 @@ struct MainMapView: View {
         VStack(spacing: 16) {
             Text("Jajanan di sekitarmu")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(.appTextPrimary)
                 .padding(.top, 10)
 
             if sheetDetent != .height(minSheetHeight) {
@@ -191,7 +190,7 @@ struct MainMapView: View {
                     Text("Favorit").tag(1)
                 }
                 .pickerStyle(.segmented)
-                .tint(blue)
+                .tint(.appPrimary)
 
                 let displayed = selectedTab == 0 ? vm.merchants : vm.merchants.filter(\.isFavorite)
 
@@ -199,7 +198,7 @@ struct MainMapView: View {
                     Spacer()
                     Text(selectedTab == 1 ? "Belum ada pedagang favorit" : "Belum ada pedagang di sekitarmu")
                         .font(.system(size: 14))
-                        .foregroundColor(Color(UIColor.systemGray))
+                        .foregroundColor(.appTextTertiary)
                     Spacer()
                 } else {
                     ScrollView(showsIndicators: false) {

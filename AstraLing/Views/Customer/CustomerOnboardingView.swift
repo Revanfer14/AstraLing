@@ -29,7 +29,7 @@ struct CustomerOnboardingView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(UIColor.systemBackground).ignoresSafeArea()
+            Color.appBackground.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {

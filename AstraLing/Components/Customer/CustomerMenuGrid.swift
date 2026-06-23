@@ -52,7 +52,7 @@ private struct MenuTile: View {
 
                 Text(item.title)
                     .font(.system(size: 11))
-                    .foregroundColor(Color(UIColor.secondaryLabel))
+                    .foregroundColor(.appTextSecondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)

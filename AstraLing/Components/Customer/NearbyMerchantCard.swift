@@ -10,16 +10,14 @@ import SwiftUI
 struct NearbyMerchantCard: View {
     let merchant: NearbyMerchant
 
-    private let blue = Color(red: 0/255, green: 69/255, blue: 229/255)
-
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 237/255, green: 246/255, blue: 255/255))
+                    .fill(Color.appSurfaceBlue)
                 Image(systemName: "fork.knife")
                     .font(.system(size: 32))
-                    .foregroundColor(blue.opacity(0.5))
+                    .foregroundColor(Color.appPrimary.opacity(0.5))
             }
             .frame(width: 100, height: 100)
             .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -27,16 +25,16 @@ struct NearbyMerchantCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(merchant.name)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(.appTextPrimary)
                     .lineLimit(2)
 
                 VStack(alignment: .leading, spacing: 6) {
                     if !merchant.distanceLabel.isEmpty {
                         HStack(spacing: 6) {
                             Image(systemName: "location.fill")
-                                .foregroundColor(blue)
+                                .foregroundColor(.appPrimary)
                             Text(merchant.distanceLabel)
-                                .foregroundColor(.black)
+                                .foregroundColor(.appTextPrimary)
                         }
                         .font(.system(size: 14))
                     }
@@ -44,9 +42,9 @@ struct NearbyMerchantCard: View {
                     if !merchant.walkLabel.isEmpty {
                         HStack(spacing: 6) {
                             Image(systemName: "figure.walk")
-                                .foregroundColor(blue)
+                                .foregroundColor(.appPrimary)
                             Text(merchant.walkLabel)
-                                .foregroundColor(.black)
+                                .foregroundColor(.appTextPrimary)
                         }
                         .font(.system(size: 14))
                     }
@@ -56,8 +54,8 @@ struct NearbyMerchantCard: View {
             Spacer()
         }
         .padding(4)
-        .background(Color.white)
+        .background(Color.appSurface)
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: Color(red: 208/255, green: 214/255, blue: 226/255).opacity(0.5), radius: 25, y: 6)
+        .shadow(color: Color.Token.shadowBlueGrey.opacity(0.5), radius: 25, y: 6)
     }
 }

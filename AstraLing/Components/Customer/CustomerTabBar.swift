@@ -24,9 +24,9 @@ struct CustomerTabBar: View {
             }
             .padding(.horizontal, 8)
             .frame(height: 56)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.appBackground)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.appBackground)
     }
 }
 
@@ -37,7 +37,7 @@ private struct CustomerTabBarItem: View {
     let action: () -> Void
 
     private var tint: Color {
-        isActive ? Color(red: 0.44, green: 0.56, blue: 0.84) : Color(UIColor.tertiaryLabel)
+        isActive ? Color.Token.navActive : Color.appTextTertiary
     }
 
     var body: some View {
