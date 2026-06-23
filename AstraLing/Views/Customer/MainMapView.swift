@@ -19,13 +19,16 @@ struct MainMapView: View {
             span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
         )
     )
+    @Namespace private var pickerAnimation
     @State private var selectedTab = 0
     @State private var hideBalance = false
     @State private var hasCenteredOnUser = false
     @State private var mapCenter: CLLocationCoordinate2D?
     @State private var sheetDetent: PresentationDetent = .height(360)
+    @State private var selectedMerchant: NearbyMerchant?
+    @State private var showScanner = false
 
-    private let minSheetHeight: CGFloat = 96
+    private let minSheetHeight: CGFloat = 85
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -33,7 +36,12 @@ struct MainMapView: View {
                 UserAnnotation()
                 ForEach(vm.merchants) { merchant in
                     Annotation(merchant.name, coordinate: merchant.coordinate) {
-                        MerchantMapPin(name: merchant.name)
+                        MerchantMapPin(name: merchant.name, isSelected: selectedMerchant?.id == merchant.id)
+                            .onTapGesture {
+                                selectedMerchant = merchant
+                                sheetDetent = .height(360)
+                                focus(on: merchant)
+                            }
                     }
                 }
             }
@@ -43,12 +51,20 @@ struct MainMapView: View {
             }
             .sheet(isPresented: .constant(true)) {
                 sheetContent
-                    .presentationDetents([.height(minSheetHeight), .height(360), .large], selection: $sheetDetent)
+                    .presentationDetents(
+                        selectedMerchant != nil
+                            ? [.height(360), .large]
+                            : [.height(minSheetHeight), .height(360), .large],
+                        selection: $sheetDetent
+                    )
                     .presentationDragIndicator(.visible)
                     .presentationBackgroundInteraction(.enabled(upThrough: .large))
                     .interactiveDismissDisabled()
                     .presentationCornerRadius(26)
                     .presentationBackground(Color.appSurface)
+                    .fullScreenCover(isPresented: $showScanner) {
+                        QRScannerView()
+                    }
             }
 
             topBar
@@ -124,6 +140,19 @@ struct MainMapView: View {
         }
     }
 
+    private func focus(on merchant: NearbyMerchant) {
+        let offset = CLLocationCoordinate2D(
+            latitude: merchant.coordinate.latitude - 0.004,
+            longitude: merchant.coordinate.longitude
+        )
+        withAnimation {
+            camera = .region(MKCoordinateRegion(
+                center: offset,
+                span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+            ))
+        }
+    }
+
     private var topBar: some View {
         HStack(spacing: 16) {
             Button {
@@ -159,7 +188,9 @@ struct MainMapView: View {
 
                 Spacer()
 
-                Button {} label: {
+                Button {
+                    showScanner = true
+                } label: {
                     Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.appTextOnPrimary)
@@ -177,20 +208,61 @@ struct MainMapView: View {
         .padding(.top, 74)
     }
 
+    @ViewBuilder
     private var sheetContent: some View {
+        if let selected = selectedMerchant {
+            MerchantDetailSheet(
+                merchant: selected,
+                isFavorite: vm.isFavorite(selected.id),
+                onBack: {
+                    selectedMerchant = nil
+                    sheetDetent = .height(360)
+                },
+                onToggleFavorite: {
+                    vm.toggleFavorite(selected.id)
+                }
+            )
+        } else {
+            listContent
+        }
+    }
+
+    private var listContent: some View {
         VStack(spacing: 16) {
             Text("Jajanan di sekitarmu")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.appTextPrimary)
-                .padding(.top, 10)
+                .padding(.top, 15)
 
             if sheetDetent != .height(minSheetHeight) {
-                Picker("", selection: $selectedTab) {
-                    Text("Semua").tag(0)
-                    Text("Favorit").tag(1)
+                HStack(spacing: 0) {
+                    let tabs = ["Semua", "Favorit"]
+                    ForEach(0..<2, id: \.self) { index in
+                        Text(tabs[index])
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(selectedTab == index ? .white : .gray)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(
+                                ZStack {
+                                    if selectedTab == index {
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color.appPrimary)
+                                            .matchedGeometryEffect(id: "activeTab", in: pickerAnimation)
+                                    }
+                                }
+                            )
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                withAnimation(.interactiveSpring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.5)) {
+                                    selectedTab = index
+                                }
+                            }
+                    }
                 }
-                .pickerStyle(.segmented)
-                .tint(.appPrimary)
+                .padding(4)
+                .background(Color.gray.opacity(0.15))
+                .cornerRadius(20)
 
                 let displayed = selectedTab == 0 ? vm.merchants : vm.merchants.filter(\.isFavorite)
 
@@ -205,6 +277,11 @@ struct MainMapView: View {
                         LazyVStack(spacing: 12) {
                             ForEach(displayed) { merchant in
                                 NearbyMerchantCard(merchant: merchant)
+                                    .onTapGesture {
+                                        selectedMerchant = merchant
+                                        sheetDetent = .height(360)
+                                        focus(on: merchant)
+                                    }
                             }
                         }
                         .padding(.bottom, 32)

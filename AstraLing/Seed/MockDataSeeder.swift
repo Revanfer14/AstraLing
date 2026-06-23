@@ -44,7 +44,7 @@ final class MockDataSeeder {
         let email, name, category, description: String
         let lat, lng: Double
         let balance, astraPoints: Int
-        let menu: [(name: String, price: Int)]
+        let menu: [(name: String, price: Int, category: String)]
     }
 
     private func seedMerchants() async -> [String] {
@@ -57,10 +57,10 @@ final class MockDataSeeder {
                 lat: -6.2088, lng: 106.8456,
                 balance: 2_500_000, astraPoints: 150,
                 menu: [
-                    ("Bakso Biasa", 15_000),
-                    ("Bakso Urat", 18_000),
-                    ("Bakso Malang Komplit", 22_000),
-                    ("Es Teh Manis", 5_000)
+                    ("Bakso Biasa", 15_000, "Makanan"),
+                    ("Bakso Urat", 18_000, "Makanan"),
+                    ("Bakso Malang Komplit", 22_000, "Makanan"),
+                    ("Es Teh Manis", 5_000, "Minuman")
                 ]
             ),
             MerchantSeed(
@@ -71,10 +71,10 @@ final class MockDataSeeder {
                 lat: -6.2215, lng: 106.8412,
                 balance: 1_800_000, astraPoints: 90,
                 menu: [
-                    ("Manis Coklat", 35_000),
-                    ("Manis Keju", 35_000),
-                    ("Manis Coklat Keju", 40_000),
-                    ("Telur Kornet", 40_000)
+                    ("Manis Coklat", 35_000, "Makanan"),
+                    ("Manis Keju", 35_000, "Makanan"),
+                    ("Manis Coklat Keju", 40_000, "Makanan"),
+                    ("Telur Kornet", 40_000, "Makanan")
                 ]
             ),
             MerchantSeed(
@@ -85,10 +85,10 @@ final class MockDataSeeder {
                 lat: -6.2100, lng: 106.8440,
                 balance: 900_000, astraPoints: 60,
                 menu: [
-                    ("Batagor Kuah", 12_000),
-                    ("Batagor Kering", 12_000),
-                    ("Cimol Original", 8_000),
-                    ("Cimol Pedas", 8_000)
+                    ("Batagor Kuah", 12_000, "Makanan"),
+                    ("Batagor Kering", 12_000, "Makanan"),
+                    ("Cimol Original", 8_000, "Makanan"),
+                    ("Cimol Pedas", 8_000, "Makanan")
                 ]
             ),
             MerchantSeed(
@@ -99,9 +99,9 @@ final class MockDataSeeder {
                 lat: -6.2050, lng: 106.8480,
                 balance: 700_000, astraPoints: 40,
                 menu: [
-                    ("Cilok Original", 5_000),
-                    ("Cilok Isi Telur", 7_000),
-                    ("Cilok Jumbo", 10_000)
+                    ("Cilok Original", 5_000, "Makanan"),
+                    ("Cilok Isi Telur", 7_000, "Makanan"),
+                    ("Cilok Jumbo", 10_000, "Makanan")
                 ]
             ),
             MerchantSeed(
@@ -112,10 +112,10 @@ final class MockDataSeeder {
                 lat: -6.2140, lng: 106.8395,
                 balance: 3_200_000, astraPoints: 220,
                 menu: [
-                    ("Soto Betawi Biasa", 25_000),
-                    ("Soto Betawi Spesial", 32_000),
-                    ("Es Jeruk", 7_000),
-                    ("Kerupuk", 3_000)
+                    ("Soto Betawi Biasa", 25_000, "Makanan"),
+                    ("Soto Betawi Spesial", 32_000, "Makanan"),
+                    ("Es Jeruk", 7_000, "Minuman"),
+                    ("Kerupuk", 3_000, "Makanan")
                 ]
             ),
             MerchantSeed(
@@ -126,10 +126,10 @@ final class MockDataSeeder {
                 lat: -6.2070, lng: 106.8510,
                 balance: 1_100_000, astraPoints: 75,
                 menu: [
-                    ("Cakwe Polos", 5_000),
-                    ("Cakwe Isi Udang", 8_000),
-                    ("Odading", 6_000),
-                    ("Kopi Susu", 10_000)
+                    ("Cakwe Polos", 5_000, "Makanan"),
+                    ("Cakwe Isi Udang", 8_000, "Makanan"),
+                    ("Odading", 6_000, "Makanan"),
+                    ("Kopi Susu", 10_000, "Minuman")
                 ]
             )
         ]
@@ -162,7 +162,7 @@ final class MockDataSeeder {
 
                 let menuRef = db.collection("merchants").document(uid).collection("menu")
                 for (order, item) in seed.menu.enumerated() {
-                    let menuItem = MenuItem(name: item.name, price: item.price, order: order)
+                    let menuItem = MenuItem(name: item.name, price: item.price, category: item.category, order: order)
                     _ = try menuRef.addDocument(from: menuItem)
                 }
 

@@ -33,3 +33,7 @@ Thumbs.db
 # ===== COCOAPODS (kalau pakai) =====
 # Pods/
 # Podfile.lock
+
+# ===== FIREBASE (CRITICAL — berisi API key) =====
+GoogleService-Info.plist
+**/GoogleService-Info.plist
