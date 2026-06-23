@@ -135,7 +135,7 @@ struct MerchantDashboardView: View {
                 NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true)) {
                     quickActionItem(icon: "qrcode", label: "QR Saya")
                 }
-                Button {} label: {
+                NavigationLink(destination: EditProfilView().navigationBarBackButtonHidden(true)) {
                     quickActionItem(icon: "square.and.pencil", label: "Edit Profile")
                 }
             }
