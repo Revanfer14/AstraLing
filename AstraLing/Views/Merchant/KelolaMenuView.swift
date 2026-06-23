@@ -234,7 +234,7 @@ struct KelolaMenuView: View {
     }
 
     private var addMenuButton: some View {
-        Button {} label: {
+        NavigationLink(destination: TambahMenuView().navigationBarBackButtonHidden(true)) {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
                     .font(.system(size: 16, weight: .bold))

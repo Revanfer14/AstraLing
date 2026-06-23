@@ -165,8 +165,8 @@ struct TransferSaldoView: View {
                             RoundedRectangle(cornerRadius: 13)
                                 .fill(
                                     selectedChip == chip.label
-                                    ? Color(hex: "#EDF6FF")
-                                        : Color(hex: "#FFFFFF")
+                                    ? Color(red: 0.929, green: 0.965, blue: 1)
+                                        : Color.white
                                 )
                                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 7, x: 0, y: 4)
                         )
