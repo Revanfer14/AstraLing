@@ -10,9 +10,31 @@ import SwiftUI
 struct TransferSaldoView: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var selectedChip: String? = "Rp 500rb"
+    @State private var amountText: String = ""
+    @State private var selectedChip: String? = nil
+    @FocusState private var amountFocused: Bool
 
-    private let chips = ["Rp 100rb", "Rp 500rb", "Semua"]
+    private let availableBalance = 1_245_000
+    private let chips: [(label: String, value: Int)] = [
+        ("Rp 100rb", 100_000),
+        ("Rp 500rb", 500_000),
+        ("Semua",  1_245_000),
+    ]
+
+    private var currentAmount: Int {
+        Int(amountText.filter { $0.isNumber }) ?? 0
+    }
+
+    private var displayAmount: String {
+        currentAmount == 0 ? "Rp 0" : formatRupiah(currentAmount)
+    }
+
+    private func formatRupiah(_ value: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = "."
+        return "Rp \(formatter.string(from: NSNumber(value: value)) ?? "\(value)")"
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -41,6 +63,8 @@ struct TransferSaldoView: View {
             .padding(.horizontal, 16)
         }
         .background(Color.white.ignoresSafeArea())
+        .navigationBarHidden(true)
+        .onTapGesture { amountFocused = false }
     }
 
     private var headerSection: some View {
@@ -56,7 +80,6 @@ struct TransferSaldoView: View {
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
-
             VStack(alignment: .leading, spacing: 1) {
                 Text("Transfer Saldo")
                     .font(.system(size: 18))
@@ -74,11 +97,41 @@ struct TransferSaldoView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
 
-            Text("Rp 500.000")
-                .font(.system(size: 36, weight: .bold))
-                .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149))
+            ZStack {
+                Text(displayAmount)
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundStyle(
+                        currentAmount > 0
+                            ? Color(red: 0.055, green: 0.09, blue: 0.149)
+                            : Color(red: 0.753, green: 0.788, blue: 0.839)
+                    )
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .allowsHitTesting(false)
 
-            Text("Saldo usaha tersedia Rp 1.245.000")
+                TextField("", text: $amountText)
+                    .focused($amountFocused)
+                    .keyboardType(.numberPad)
+                    .foregroundColor(.clear)
+                    .accentColor(.clear)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .onChange(of: amountText) { _, newValue in
+                        let digits = newValue.filter { $0.isNumber }
+                        let limited = String(digits.prefix(10))
+                        if amountText != limited {
+                            amountText = limited
+                        }
+                        if let selected = selectedChip, let chip = chips.first(where: { $0.label == selected }) {
+                            if limited != String(chip.value) {
+                                selectedChip = nil
+                            }
+                        } else if selectedChip != nil {
+                            selectedChip = nil
+                        }
+                    }
+            }
+            .onTapGesture { amountFocused = true }
+
+            Text("Saldo usaha tersedia \(formatRupiah(availableBalance))")
                 .font(.system(size: 11.5))
                 .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
         }
@@ -95,22 +148,31 @@ struct TransferSaldoView: View {
 
     private var quickAmountRow: some View {
         HStack(spacing: 9) {
-            ForEach(chips, id: \.self) { chip in
-                Button { selectedChip = chip } label: {
-                    Text(chip)
+            ForEach(chips, id: \.label) { chip in
+                Button {
+                    selectedChip = chip.label
+                    amountText = String(chip.value)
+                    amountFocused = false
+                } label: {
+                    Text(chip.label)
                         .font(.system(size: 13))
-                        .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                        .foregroundStyle(
+                            Color(red: 0, green: 0.271, blue: 0.898)
+                        )
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
                         .background(
                             RoundedRectangle(cornerRadius: 13)
-                                .fill(Color.white)
+                                .fill(
+                                    selectedChip == chip.label
+                                    ? Color(hex: "#EDF6FF")
+                                        : Color(hex: "#FFFFFF")
+                                )
                                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 7, x: 0, y: 4)
                         )
                 }
             }
         }
-        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 8)
     }
 
     private func sectionLabel(_ text: String) -> some View {
@@ -131,7 +193,6 @@ struct TransferSaldoView: View {
                     .foregroundStyle(.white)
                     .font(.system(size: 18))
             }
-
             VStack(alignment: .leading, spacing: 2) {
                 Text("AstraPay Saya")
                     .font(.system(size: 14.5))
@@ -140,9 +201,7 @@ struct TransferSaldoView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
             }
-
             Spacer()
-
             Text("Pribadi")
                 .font(.system(size: 10))
                 .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
@@ -169,11 +228,10 @@ struct TransferSaldoView: View {
                     .font(.system(size: 13.5))
                     .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
                 Spacer()
-                Text("Rp 500.000")
+                Text(displayAmount)
                     .font(.system(size: 13.5))
                     .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
             }
-
             HStack {
                 Text("Biaya transfer")
                     .font(.system(size: 13.5))
@@ -184,17 +242,15 @@ struct TransferSaldoView: View {
                     .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
             }
             .padding(.bottom, 2)
-
             Rectangle()
                 .fill(Color(red: 0.941, green: 0.941, blue: 0.941))
                 .frame(height: 1)
-
             HStack {
                 Text("Masuk ke AstraPay")
                     .font(.system(size: 15))
                     .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
                 Spacer()
-                Text("Rp 500.000")
+                Text(displayAmount)
                     .font(.system(size: 15))
                     .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
             }
@@ -241,5 +297,7 @@ struct TransferSaldoView: View {
 }
 
 #Preview {
-    TransferSaldoView()
+    NavigationStack {
+        TransferSaldoView()
+    }
 }
