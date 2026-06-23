@@ -111,9 +111,9 @@ struct EditProfilView: View {
         VStack(spacing: 8) {
             ZStack(alignment: .bottomTrailing) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 47)
+                    RoundedRectangle(cornerRadius: 22)
                         .fill(Color(red: 0.847, green: 0.710, blue: 0.455))
-                        .frame(width: 93, height: 94)
+                        .frame(width: 169, height: 94)
                     Image(systemName: "fork.knife")
                         .font(.system(size: 24))
                         .foregroundStyle(.white.opacity(0.8))
@@ -126,8 +126,8 @@ struct EditProfilView: View {
                             RoundedRectangle(cornerRadius: 16)
                                 .stroke(Color.white, lineWidth: 3)
                         )
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 12))
+                    Image(systemName: "camera")
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .offset(x: 4, y: 4)
