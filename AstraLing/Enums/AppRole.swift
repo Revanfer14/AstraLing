@@ -6,6 +6,10 @@
 //
 
 enum AppRole: String, Codable, CaseIterable {
-    case customer = "Customer"
-    case merchant = "Merchant"
+    case customer = "customer"
+    case merchant = "merchant"
+
+    init?(normalizing raw: String) {
+        self.init(rawValue: raw.lowercased())
+    }
 }
