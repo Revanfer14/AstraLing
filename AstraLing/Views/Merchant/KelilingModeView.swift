@@ -40,7 +40,6 @@ struct KelilingModeView: View {
     @State private var activePing: PinItem? = nil
     @State private var messageText = ""
     @State private var showDashboard = false
-    @State private var hideSheet = false
 
     private let merchantCenter = CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
     
@@ -93,30 +92,38 @@ struct KelilingModeView: View {
             }
         }
         .ignoresSafeArea()
-        .sheet(isPresented: Binding(get: { isVisible && !hideSheet }, set: { _ in })) {
-            if let pin = activePing {
-                chatSheetContent(for: pin)
-                    .presentationDetents([minimizedDetent, .medium, .large], selection: $selectedDetent)
-                    .presentationBackgroundInteraction(.enabled)
-                    .presentationDragIndicator(.visible)
-                    .interactiveDismissDisabled(true)
-                    .presentationCornerRadius(34)
-            } else {
-                sheetContent
-                    .presentationDetents([minimizedDetent, expandedDetent, .large], selection: $selectedDetent)
-                    .presentationBackgroundInteraction(.enabled)
-                    .presentationDragIndicator(.visible)
-                    .interactiveDismissDisabled(true)
-                    .presentationCornerRadius(34)
+        .sheet(isPresented: $isVisible) {
+            Group {
+                if let pin = activePing {
+                    chatSheetContent(for: pin)
+                        .presentationDetents([minimizedDetent, .medium, .large], selection: $selectedDetent)
+                        .presentationBackgroundInteraction(.enabled)
+                        .presentationDragIndicator(.visible)
+                        .interactiveDismissDisabled(true)
+                        .presentationCornerRadius(34)
+                } else {
+                    sheetContent
+                        .presentationDetents([minimizedDetent, expandedDetent, .large], selection: $selectedDetent)
+                        .presentationBackgroundInteraction(.enabled)
+                        .presentationDragIndicator(.visible)
+                        .interactiveDismissDisabled(true)
+                        .presentationCornerRadius(34)
+                }
+            }
+            .fullScreenCover(isPresented: Binding(
+                get: { showDashboard && isVisible },
+                set: { if !$0 { showDashboard = false } }
+            )) {
+                MerchantDashboardView()
             }
         }
         .onChange(of: isVisible) { _, newValue in
             if newValue { selectedDetent = expandedDetent }
         }
-        .onChange(of: showDashboard) { _, isShowing in
-            if !isShowing { hideSheet = false }
-        }
-        .fullScreenCover(isPresented: $showDashboard) {
+        .fullScreenCover(isPresented: Binding(
+            get: { showDashboard && !isVisible },
+            set: { if !$0 { showDashboard = false } }
+        )) {
             MerchantDashboardView()
         }
     }
@@ -351,16 +358,7 @@ struct KelilingModeView: View {
                 Spacer()
 
                 Button {
-                    var transaction = SwiftUI.Transaction()
-                    transaction.disablesAnimations = true
-                    
-                    withTransaction(transaction) {
-                        hideSheet = true
-                    }
-                    
-                    DispatchQueue.main.async {
-                        showDashboard = true
-                    }
+                    showDashboard = true
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
