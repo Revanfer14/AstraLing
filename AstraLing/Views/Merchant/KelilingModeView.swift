@@ -349,9 +349,16 @@ struct KelilingModeView: View {
                 Spacer()
 
                 Button {
-                    hideSheet = true
+                    var transaction = SwiftUI.Transaction()
+                    transaction.disablesAnimations = true
                     
-                    showDashboard = true
+                    withTransaction(transaction) {
+                        hideSheet = true
+                    }
+                    
+                    DispatchQueue.main.async {
+                        showDashboard = true
+                    }
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
