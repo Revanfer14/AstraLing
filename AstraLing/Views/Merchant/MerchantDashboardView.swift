@@ -94,7 +94,7 @@ struct MerchantDashboardView: View {
                 .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
                 .padding(.bottom, 12)
 
-            Button {} label: {
+            NavigationLink(destination: RiwayatTransaksiView().navigationBarBackButtonHidden(true)) {
                 HStack(spacing: 11) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
@@ -132,7 +132,7 @@ struct MerchantDashboardView: View {
                 NavigationLink(destination: TransferSaldoView().navigationBarBackButtonHidden(true)) {
                     quickActionItem(icon: "arrow.up", label: "Transfer Saldo")
                 }
-                Button {} label: {
+                NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true)) {
                     quickActionItem(icon: "qrcode", label: "QR Saya")
                 }
                 Button {} label: {
