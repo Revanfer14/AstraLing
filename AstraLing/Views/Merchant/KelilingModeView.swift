@@ -29,7 +29,7 @@ private struct DownTriangle: Shape {
 }
 
 private let expandedDetent = PresentationDetent.height(240)
-private let minimizedDetent = PresentationDetent.height(100)
+private let minimizedDetent = PresentationDetent.height(90)
 
 struct KelilingModeView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
@@ -96,7 +96,7 @@ struct KelilingModeView: View {
         .sheet(isPresented: Binding(get: { isVisible && !hideSheet }, set: { _ in })) {
             if let pin = activePing {
                 chatSheetContent(for: pin)
-                    .presentationDetents([expandedDetent, .medium, .large])
+                    .presentationDetents([minimizedDetent, .medium, .large], selection: $selectedDetent)
                     .presentationBackgroundInteraction(.enabled)
                     .presentationDragIndicator(.visible)
                     .interactiveDismissDisabled(true)
@@ -125,6 +125,7 @@ struct KelilingModeView: View {
         withAnimation {
             activePing = pin
             if let pin = pin {
+                selectedDetent = minimizedDetent
                 let lats = [merchantCenter.latitude, pin.coordinate.latitude]
                 let lons = [merchantCenter.longitude, pin.coordinate.longitude]
                 let centerLat = (lats.min()! + lats.max()!) / 2
@@ -136,6 +137,7 @@ struct KelilingModeView: View {
                     span: MKCoordinateSpan(latitudeDelta: spanLat, longitudeDelta: spanLon)
                 ))
             } else {
+                selectedDetent = expandedDetent
                 mapPosition = .region(MKCoordinateRegion(
                     center: merchantCenter,
                     span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
@@ -463,7 +465,7 @@ struct KelilingModeView: View {
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
                 .padding(.horizontal, 16)
-                .padding(.top, 12)
+                .padding(.top, 28)
 
             HStack(spacing: 8) {
                 Text("\(allPings.count) customer")
@@ -474,7 +476,7 @@ struct KelilingModeView: View {
                     .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
             }
             .padding(.horizontal, 16)
-            .padding(.top, 4)
+            .padding(.top, 6)
             .padding(.bottom, 10)
 
             ScrollView {
@@ -565,75 +567,80 @@ struct KelilingModeView: View {
                 Spacer()
             }
             .padding(12)
+            .padding(.top, 24)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Spacer()
-                        Text("Hari ini · 14.42")
-                            .font(.system(size: 11))
-                            .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 5)
-                            .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
-                        Spacer()
-                    }
-                    .padding(.top, 14)
+            if selectedDetent != minimizedDetent {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Spacer()
+                            Text("Hari ini · 14.42")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 5)
+                                .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
+                            Spacer()
+                        }
+                        .padding(.top, 14)
 
-                    receivedBubble("Pak, posisi di mana? mau beli cimol 2 bungkus ya", time: "14.41")
-                    sentBubble("Saya OTW ya bu, 2 menit lagi sampai 🙏", time: "14.42")
-                    receivedBubble("Oke pak ditunggu, depan pagar hijau ya", time: "14.42")
-                }
-                .padding(.horizontal, 18)
-                .padding(.bottom, 16)
-            }
-            .background(Color(red: 0.929, green: 0.965, blue: 1))
-
-            VStack(spacing: 11) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        quickReplyChip("Sudah sampai")
-                        quickReplyChip("Sebentar lagi")
-                        quickReplyChip("Pesanan siap")
+                        receivedBubble("Pak, posisi di mana? mau beli cimol 2 bungkus ya", time: "14.41")
+                        sentBubble("Saya OTW ya bu, 2 menit lagi sampai 🙏", time: "14.42")
+                        receivedBubble("Oke pak ditunggu, depan pagar hijau ya", time: "14.42")
                     }
                     .padding(.horizontal, 18)
+                    .padding(.bottom, 16)
                 }
+                .background(Color(red: 0.929, green: 0.965, blue: 1))
 
-                HStack(spacing: 9) {
-                    TextField("Tulis pesan ke \(pin.name)…", text: $messageText)
-                        .font(.system(size: 13.5))
-                        .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
+                VStack(spacing: 11) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            quickReplyChip("Sudah sampai")
+                            quickReplyChip("Sebentar lagi")
+                            quickReplyChip("Pesanan siap")
+                        }
+                        .padding(.horizontal, 18)
+                    }
 
-                    Button {} label: {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(red: 0.106, green: 0.31, blue: 0.878))
-                                .frame(width: 40, height: 40)
-                            Image(systemName: "paperplane.fill")
-                                .foregroundStyle(.white)
-                                .font(.system(size: 14))
+                    HStack(spacing: 9) {
+                        TextField("Tulis pesan ke \(pin.name)…", text: $messageText)
+                            .font(.system(size: 13.5))
+                            .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
+
+                        Button {} label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(red: 0.106, green: 0.31, blue: 0.878))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "paperplane.fill")
+                                    .foregroundStyle(.white)
+                                    .font(.system(size: 14))
+                            }
                         }
                     }
-                }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 7)
-                .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(Color(red: 0.965, green: 0.984, blue: 1))
-                )
-                .padding(.horizontal, 18)
-            }
-            .padding(.top, 13)
-            .padding(.bottom, 24)
-            .background(
-                Color.white
-                    .overlay(
-                        Rectangle()
-                            .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
-                            .frame(height: 1),
-                        alignment: .top
+                    .padding(.horizontal, 15)
+                    .padding(.vertical, 7)
+                    .background(
+                        RoundedRectangle(cornerRadius: 15)
+                            .fill(Color(red: 0.965, green: 0.984, blue: 1))
                     )
-            )
+                    .padding(.horizontal, 18)
+                }
+                .padding(.top, 13)
+                .padding(.bottom, 24)
+                .background(
+                    Color.white
+                        .overlay(
+                            Rectangle()
+                                .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
+                                .frame(height: 1),
+                            alignment: .top
+                        )
+                )
+            } else {
+                Spacer()
+            }
         }
         .frame(maxWidth: .infinity)
     }
