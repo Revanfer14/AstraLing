@@ -16,7 +16,7 @@ struct ContentView: View {
     
     var body: some View {
         switch role {
-        case .customer: CustomerOnboardingView()
+        case .customer: AstraPayHomeView()
         case .merchant: KelilingModeView()
         case nil:       LoginView(selectedRoleRaw: $selectedRoleRaw)
         }

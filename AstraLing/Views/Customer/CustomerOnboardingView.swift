@@ -2,97 +2,95 @@
 //  CustomerOnboardingView.swift
 //  AstraLing
 //
-//  Created by Revan Ferdinand on 19/06/26.
+//  Created by Revan Ferdinand on 23/06/26.
 //
 
 import SwiftUI
 
 struct CustomerOnboardingView: View {
-    @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
-    @AppStorage("hasSeenAstraLingOnboarding") private var hasSeenAstraLingOnboarding = false
-    @EnvironmentObject var authViewModel: AuthViewModel
-    @StateObject private var homeVM = CustomerHomeViewModel()
-    @State private var showAstraLing = false
-    @State private var showMainMap = false
-    @State private var openMapAfterOnboarding = false
+    let onStart: () -> Void
 
-    private let menuItems: [MenuTileItem] = [
-        MenuTileItem(title: "AstraLing",          assetName: "astraling_logo"),
-        MenuTileItem(title: "Pulsa & Paket Data",  assetName: "pulsapaketdata",  badged: true),
-        MenuTileItem(title: "PLN",                 assetName: "pln",             badged: true),
-        MenuTileItem(title: "Uang Elektronik",     assetName: "uangelektronik"),
-        MenuTileItem(title: "Travel & Hiburan",    assetName: "travelhiburan"),
-        MenuTileItem(title: "Gift Voucher",        assetName: "giftvoucher",     badged: true),
-        MenuTileItem(title: "FIFGROUP",            assetName: "fifgroup",        badged: true),
-        MenuTileItem(title: "Lihat Semua",         assetName: "lihatsemua"),
+    private let slides: [(title: String, asset: String)] = [
+        ("Temukan pedagang di sekitarmu!", "onboarding_cust_1"),
+        ("Kirim Ping untuk beri tahu kamu ingin mampir.", "onboarding_cust_2"),
+        ("Datangi pedagang dan lakukan pembayaran.", "onboarding_cust_3")
     ]
 
+    @AppStorage("hasSeenAstraLingOnboarding") private var hasSeenAstraLingOnboarding = false
+    @State private var selection = 0
+
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color.appBackground.ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    CustomerHomeHeader(name: homeVM.name)
-
-                    VStack(spacing: 12) {
-                        CustomerBalanceCard(
-                            balance: homeVM.balance,
-                            astraPoints: homeVM.astraPoints,
-                            onAstraPoints: openAstraPoints
-                        )
-                        .padding(.top, -20)
-
-                        CustomerPromoBanner()
-
-                        CustomerMenuGrid(items: menuItems, onAstraLing: openAstraLing)
-                    }
-                    .padding(.horizontal, 16)
-
-                    Spacer(minLength: 120)
-                }
-            }
+        ZStack {
+            LinearGradient(
+                stops: [
+                    .init(color: Color.Token.blue300.opacity(0.4), location: 0),
+                    .init(color: Color.appAccent.opacity(0.25), location: 0.45),
+                    .init(color: Color.appSurface, location: 0.72)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
+                TabView(selection: $selection) {
+                    ForEach(0..<slides.count, id: \.self) { index in
+                        VStack(spacing: 40) {
+                            Text(slides[index].title)
+                                .font(.system(size: 28, weight: .bold))
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.appTextPrimary)
+                                .padding(.horizontal, 24)
+
+                            Image(slides[index].asset)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 300)
+                        }
+                        .padding(.top, 20)
+                        .tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(maxHeight: .infinity)
+                .animation(.easeInOut, value: selection)
+
+                HStack(spacing: 5) {
+                    ForEach(0..<slides.count, id: \.self) { index in
+                        if index == selection {
+                            Capsule()
+                                .fill(Color.appTint)
+                                .frame(width: 30, height: 10)
+                        } else {
+                            Circle()
+                                .fill(Color.Token.blue100)
+                                .frame(width: 10, height: 10)
+                        }
+                    }
+                }
+                .animation(.easeInOut, value: selection)
+                .padding(.top, 16)
+
                 Spacer()
-                CustomerQRISButton()
-                    .padding(.bottom, 44)
+
+                Button {
+                    onStart()
+                } label: {
+                    Text("Mulai jelajahi")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.appTextOnPrimary)
+                        .frame(width: 300)
+                        .padding(16)
+                        .background(Color.appPrimary)
+                        .cornerRadius(20)
+                }
+                .padding(.bottom, 44)
             }
-
-            CustomerTabBar(onProfil: {
-                authViewModel.logout()
-                selectedRoleRaw = ""
-            })
         }
-        .ignoresSafeArea(edges: .top)
-        .task { await homeVM.load() }
-        .fullScreenCover(isPresented: $showAstraLing, onDismiss: {
-            if openMapAfterOnboarding {
-                openMapAfterOnboarding = false
-                showMainMap = true
-            }
-        }) {
-            AstraLingOnboardingView(onStart: {
-                openMapAfterOnboarding = true
-                showAstraLing = false
-            })
-        }
-        .fullScreenCover(isPresented: $showMainMap) { MainMapView() }
-    }
-
-    private func openAstraLing() {
-        if hasSeenAstraLingOnboarding {
-            showMainMap = true
-        } else {
-            showAstraLing = true
-        }
-    }
-
-    private func openAstraPoints() {
+        .onAppear { hasSeenAstraLingOnboarding = true }
     }
 }
 
 #Preview {
-    CustomerOnboardingView()
-        .environmentObject(AuthViewModel())
+    CustomerOnboardingView(onStart: {})
 }
