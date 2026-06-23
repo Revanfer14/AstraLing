@@ -10,36 +10,34 @@ import SwiftUI
 struct CustomerOnboardingView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     @EnvironmentObject var authViewModel: AuthViewModel
-
-    private let balance: Int = 0
-    private let astraPoints: Int = 0
+    @StateObject private var homeVM = CustomerHomeViewModel()
 
     private let menuItems: [MenuTileItem] = [
-        MenuTileItem(title: "AstraLing",          imageName: "menu-astraling"),
-        MenuTileItem(title: "Pulsa & Paket Data",  imageName: "menu-pulsa",           badge: "Promo"),
-        MenuTileItem(title: "PLN",                 imageName: "menu-pln",             badge: "Promo"),
-        MenuTileItem(title: "Uang Elektronik",     imageName: "menu-uang-elektronik"),
-        MenuTileItem(title: "Travel & Hiburan",    imageName: "menu-travel"),
-        MenuTileItem(title: "Gift Voucher",        imageName: "menu-gift-voucher",    badge: "Baru", badgeColor: Color(red: 0.53, green: 0.18, blue: 1.0)),
-        MenuTileItem(title: "FIFGROUP",            imageName: "menu-fifgroup",        badge: "Murah"),
-        MenuTileItem(title: "Lihat Semua",         imageName: "menu-lihat-semua"),
+        MenuTileItem(title: "AstraLing",          assetName: "astraling_logo"),
+        MenuTileItem(title: "Pulsa & Paket Data",  assetName: "pulsapaketdata",  badged: true),
+        MenuTileItem(title: "PLN",                 assetName: "pln",             badged: true),
+        MenuTileItem(title: "Uang Elektronik",     assetName: "uangelektronik"),
+        MenuTileItem(title: "Travel & Hiburan",    assetName: "travelhiburan"),
+        MenuTileItem(title: "Gift Voucher",        assetName: "giftvoucher",     badged: true),
+        MenuTileItem(title: "FIFGROUP",            assetName: "fifgroup",        badged: true),
+        MenuTileItem(title: "Lihat Semua",         assetName: "lihatsemua"),
     ]
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(UIColor.systemGroupedBackground).ignoresSafeArea()
+            Color(UIColor.systemBackground).ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
-                    CustomerHomeHeader()
+                    CustomerHomeHeader(name: homeVM.name)
 
                     VStack(spacing: 12) {
                         CustomerBalanceCard(
-                            balance: balance,
-                            astraPoints: astraPoints,
+                            balance: homeVM.balance,
+                            astraPoints: homeVM.astraPoints,
                             onAstraPoints: openAstraPoints
                         )
-                        .padding(.top, -36)
+                        .padding(.top, -20)
 
                         CustomerPromoBanner()
 
@@ -54,7 +52,7 @@ struct CustomerOnboardingView: View {
             VStack(spacing: 0) {
                 Spacer()
                 CustomerQRISButton()
-                    .padding(.bottom, 70)
+                    .padding(.bottom, 44)
             }
 
             CustomerTabBar(onProfil: {
@@ -63,6 +61,7 @@ struct CustomerOnboardingView: View {
             })
         }
         .ignoresSafeArea(edges: .top)
+        .task { await homeVM.load() }
     }
 
     private func openAstraLing() {

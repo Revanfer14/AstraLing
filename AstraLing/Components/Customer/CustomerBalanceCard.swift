@@ -12,48 +12,48 @@ struct CustomerBalanceCard: View {
     let astraPoints: Int
     let onAstraPoints: () -> Void
 
+    private let appBlue = Color(red: 0.25, green: 0.47, blue: 0.94)
+
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                HStack(alignment: .center) {
-                    HStack(spacing: 6) {
-                        Image("logo-astrapay")
-                            .resizable().scaledToFit()
-                            .frame(width: 20, height: 20)
-                        VStack(alignment: .leading, spacing: 1) {
-                            HStack(spacing: 4) {
-                                Text("Saldo")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color(UIColor.secondaryLabel))
-                                Image("ic-eye")
-                                    .resizable().scaledToFit()
-                                    .frame(width: 16, height: 12)
-                            }
-                            Text(balance.rupiah)
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(Color(UIColor.label))
-                        }
+            HStack(alignment: .center, spacing: 10) {
+                Image("astrapay_logo")
+                    .resizable().scaledToFit()
+                    .frame(width: 24, height: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text("Saldo")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(UIColor.secondaryLabel))
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(UIColor.secondaryLabel))
                     }
-
-                    Spacer()
-
-                    Rectangle()
-                        .fill(Color(UIColor.separator))
-                        .frame(width: 1, height: 45)
-
-                    BalanceActionButton(imageName: "ic-topup", label: "Top Up")
-                    BalanceActionButton(imageName: "ic-transfer", label: "Transfer")
+                    Text(balance.rupiah)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(Color(UIColor.label))
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
+
+                Spacer()
+
+                Rectangle()
+                    .fill(Color(UIColor.separator))
+                    .frame(width: 1, height: 44)
+
+                BalanceActionButton(systemName: "plus", label: "Top Up", tint: appBlue)
+                BalanceActionButton(systemName: "arrow.up.right", label: "Transfer", tint: appBlue)
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
 
-            Divider().padding(.horizontal, 12).padding(.top, 8)
+            Divider().padding(.horizontal, 12)
 
-            HStack(spacing: 0) {
+            HStack(spacing: 10) {
                 Button(action: onAstraPoints) {
-                    BalanceSubCard(
-                        iconName: "ic-astrapoints",
+                    PointsBox(
+                        iconName: "astrapoints_logo",
                         label: "AstraPoints",
                         value: "\(astraPoints)",
                         badge: "Untung!",
@@ -62,26 +62,15 @@ struct CustomerBalanceCard: View {
                 }
                 .buttonStyle(.plain)
 
-                Divider().frame(width: 1).padding(.vertical, 8)
-
-                BalanceSubCard(iconName: "ic-voucher", label: "Voucher Saya", value: "0")
-
-                Divider().frame(width: 1).padding(.vertical, 8)
-
-                VStack(spacing: 2) {
-                    Image("ic-bank")
-                        .resizable().scaledToFit()
-                        .frame(width: 14, height: 14)
-                    Text("Bank S...")
-                        .font(.system(size: 9))
-                        .foregroundColor(Color(UIColor.secondaryLabel))
-                    Text("Aktifkan")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(red: 0.38, green: 0.52, blue: 0.84))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                PointsBox(
+                    iconName: "voucher_logo",
+                    label: "Voucher Saya",
+                    value: "0"
+                )
             }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            .padding(.bottom, 12)
         }
         .background(Color(UIColor.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -90,15 +79,21 @@ struct CustomerBalanceCard: View {
 }
 
 private struct BalanceActionButton: View {
-    let imageName: String
+    let systemName: String
     let label: String
+    let tint: Color
 
     var body: some View {
         Button(action: {}) {
             VStack(spacing: 4) {
-                Image(imageName)
-                    .resizable().scaledToFit()
-                    .frame(width: 20, height: 20)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(tint)
+                        .frame(width: 30, height: 30)
+                    Image(systemName: systemName)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                }
                 Text(label)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(Color(UIColor.secondaryLabel))
@@ -109,7 +104,7 @@ private struct BalanceActionButton: View {
     }
 }
 
-private struct BalanceSubCard: View {
+private struct PointsBox: View {
     let iconName: String
     let label: String
     let value: String
@@ -117,7 +112,7 @@ private struct BalanceSubCard: View {
     var badgeColor: Color = .red
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Image(iconName)
                     .resizable().scaledToFit()
@@ -132,14 +127,19 @@ private struct BalanceSubCard: View {
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
                         .background(badgeColor)
-                        .clipShape(Capsule())
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
             }
             Text(value)
                 .font(.system(size: 14))
                 .foregroundColor(Color(UIColor.label))
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color(UIColor.separator), lineWidth: 1)
+        )
     }
 }
