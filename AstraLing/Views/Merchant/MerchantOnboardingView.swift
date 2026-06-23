@@ -8,31 +8,30 @@
 import SwiftUI
 
 struct MerchantOnboardingView: View {
-    @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
-    
-    @EnvironmentObject var authViewModel: AuthViewModel
-    
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
-        ZStack {
-            Text("Hello, Merchant!")
-            
-            VStack {
-                HStack {
-                    Spacer()
-                    
-                    Button("Logout") {
-                        authViewModel.logout()
-                        selectedRoleRaw = ""
-                    }
-                    .padding()
-                    .foregroundColor(.white)
-                    .background(Color.red)
-                    .cornerRadius(12)
-                    .padding()
+        VStack {
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundStyle(Color.primary)
                 }
-                
                 Spacer()
+                Text("Statistics Dashboard")
+                    .font(.headline)
+                Spacer()
+                Image(systemName: "chevron.left").opacity(0)
             }
+            .padding()
+
+            Spacer()
+            Text("Merchant statistics will appear here")
+                .foregroundStyle(.secondary)
+            Spacer()
         }
     }
 }
