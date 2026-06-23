@@ -11,6 +11,9 @@ struct MerchantDashboardView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authViewModel: AuthViewModel
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
+    @State private var selectedPeriod = "7 hari terakhir"
+    private let periods = ["7 hari terakhir", "30 hari terakhir"]
+
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -37,9 +40,26 @@ struct MerchantDashboardView: View {
                         .font(.system(size: 18, weight: .bold))
                         .foregroundStyle(Color.appTextPrimary)
                     Spacer()
-                    Text("7 hari terakhir")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.appPrimary)
+                    Menu {
+                        ForEach(periods, id: \.self) { period in
+                            Button(period) { selectedPeriod = period }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(selectedPeriod)
+                                .font(.system(size: 11.5))
+                                .foregroundStyle(Color.appPrimary)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Color.appPrimary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.appSurfaceBlue)
+                        )
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 24)
