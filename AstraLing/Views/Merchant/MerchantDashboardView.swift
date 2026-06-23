@@ -10,7 +10,9 @@ import SwiftUI
 struct MerchantDashboardView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authViewModel: AuthViewModel
+    @EnvironmentObject var merchantVM: MerchantViewModel
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
+    @StateObject private var txnVM = TransactionViewModel()
     @State private var selectedPeriod = "7 hari terakhir"
     private let periods = ["7 hari terakhir", "30 hari terakhir"]
 
@@ -88,6 +90,8 @@ struct MerchantDashboardView: View {
             }
         }
         .background(Color.appBackground.ignoresSafeArea())
+        .onAppear { txnVM.startListening() }
+        .onDisappear { txnVM.stopListening() }
         }
     }
 
@@ -109,7 +113,7 @@ struct MerchantDashboardView: View {
                 Text("Dashboard Usaha")
                     .font(.system(size: 18))
                     .foregroundStyle(Color.appTextPrimary)
-                Text("Warung Bakso Pak Haji")
+                Text(merchantVM.merchant?.name ?? "Memuat...")
                     .font(.system(size: 12))
                     .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
             }
@@ -123,17 +127,17 @@ struct MerchantDashboardView: View {
                 .font(.system(size: 12.5))
                 .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
 
-            Text("Rp1.245.000")
+            Text((merchantVM.merchant?.balance ?? 0).rupiah)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .padding(.top, 2)
 
-            Text("▲ 18% dari kemarin · 42 transaksi")
+            Text("▲ Hari ini · \(txnVM.todayCount) transaksi")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Color.appSuccess)
                 .padding(.bottom, 12)
 
-            NavigationLink(destination: RiwayatTransaksiView().navigationBarBackButtonHidden(true)) {
+            NavigationLink(destination: RiwayatTransaksiView().navigationBarBackButtonHidden(true).environmentObject(txnVM)) {
                 HStack(spacing: 11) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
@@ -171,7 +175,7 @@ struct MerchantDashboardView: View {
                 NavigationLink(destination: TransferSaldoView().navigationBarBackButtonHidden(true)) {
                     quickActionItem(icon: "arrow.up", label: "Transfer Saldo")
                 }
-                NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true)) {
+                NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true).environmentObject(merchantVM)) {
                     quickActionItem(icon: "qrcode", label: "QR Saya")
                 }
 //                NavigationLink(destination: EditProfilView().navigationBarBackButtonHidden(true)) {
@@ -219,31 +223,31 @@ struct MerchantDashboardView: View {
         ) {
             statCard(
                 icon: "banknote.fill",
-                value: "42",
+                value: "\(txnVM.todayCount)",
                 label: "Transaksi",
-                change: "+15% dari hari kemarin",
+                change: "Hari ini",
                 changeColor: Color(red: 0.098, green: 0.702, blue: 0.42)
             )
             statCard(
                 icon: "chart.line.uptrend.xyaxis",
-                value: "Rp 200.000",
+                value: txnVM.todayTotal.rupiah,
                 label: "Omzet",
-                change: "+18% kemarin",
+                change: "Hari ini",
                 changeColor: Color(red: 0.098, green: 0.702, blue: 0.42)
             )
             statCard(
                 icon: "person.2.fill",
-                value: "38",
+                value: "\(txnVM.uniqueCustomersTodayCount)",
                 label: "Pelanggan",
-                change: "+18% kemarin",
+                change: "Hari ini",
                 changeColor: Color(red: 0.098, green: 0.702, blue: 0.42)
             )
             statCard(
                 icon: "chart.bar.xaxis.ascending",
-                value: "Rp 21.000",
+                value: txnVM.avgTransactionToday.rupiah,
                 label: "Rata-rata /transaksi",
-                change: "-4% kemarin",
-                changeColor: Color(red: 0.91, green: 0.271, blue: 0.235)
+                change: "Hari ini",
+                changeColor: Color(red: 0.098, green: 0.702, blue: 0.42)
             )
         }
     }

@@ -6,7 +6,7 @@ enum MenuItemStatus: String, Codable {
 }
 
 /// `merchants/{uid}/menu/{itemId}` — a single item on the merchant's menu.
-struct MenuItem: Codable {
+struct MenuItem: Identifiable, Codable, Equatable {
     @DocumentID var id: String?
     var name: String
     var price: Int                       // rupiah

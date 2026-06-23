@@ -34,6 +34,7 @@ private let minimizedDetent = PresentationDetent.height(90)
 struct KelilingModeView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     @EnvironmentObject var authViewModel: AuthViewModel
+    @StateObject private var merchantVM = MerchantViewModel()
 
     @State private var isVisible = true
     @State private var selectedDetent: PresentationDetent = expandedDetent
@@ -93,6 +94,8 @@ struct KelilingModeView: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear { merchantVM.startListening() }
+        .onDisappear { merchantVM.stopListening() }
         .sheet(isPresented: $isVisible) {
             Group {
                 if let pin = activePing {
@@ -116,6 +119,7 @@ struct KelilingModeView: View {
                 set: { if !$0 { showDashboard = false } }
             )) {
                 MerchantDashboardView()
+                                .environmentObject(merchantVM)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { showEditProfile && isVisible },
@@ -123,6 +127,7 @@ struct KelilingModeView: View {
             )) {
                 NavigationStack {
                     EditProfilView()
+                        .environmentObject(merchantVM)
                 }
             }
         }
@@ -350,6 +355,17 @@ struct KelilingModeView: View {
         .padding(.top, 61)
     }
 
+    private var bannerPlaceholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 13)
+                .fill(Color.appPrimary)
+                .frame(width: 42, height: 42)
+            Image(systemName: "fork.knife")
+                .foregroundStyle(.white)
+                .font(.system(size: 16, weight: .semibold))
+        }
+    }
+
     private var floatingHeader: some View {
         VStack(spacing: 11) {
             HStack(spacing: 11) {
@@ -357,21 +373,30 @@ struct KelilingModeView: View {
                     showEditProfile = true
                 } label: {
                     HStack(spacing: 11) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 13)
-                                .fill(Color.appPrimary)
-                                .frame(width: 42, height: 42)
-                            Image(systemName: "fork.knife")
-                                .foregroundStyle(.white)
-                                .font(.system(size: 16, weight: .semibold))
+                        Group {
+                            if let urlStr = merchantVM.merchant?.bannerUrl,
+                               let url = URL(string: urlStr) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                            .frame(width: 42, height: 42)
+                                            .clipShape(RoundedRectangle(cornerRadius: 13))
+                                    default:
+                                        bannerPlaceholder
+                                    }
+                                }
+                            } else {
+                                bannerPlaceholder
+                            }
                         }
 
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("Martabak Bang Jarwo")
+                            Text(merchantVM.merchant?.name ?? "Memuat...")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundStyle(Color.appTextPrimary)
                                 .lineLimit(1)
-                            Text("AstraMerchant · ID 0812****34")
+                            Text("AstraMerchant · #\(String((merchantVM.uid ?? "").prefix(8)).uppercased())")
                                 .font(.system(size: 11))
                                 .foregroundStyle(Color.appTextTertiary)
                         }

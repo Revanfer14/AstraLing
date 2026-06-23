@@ -24,8 +24,24 @@ private func generateQRCode(_ string: String) -> UIImage {
 
 struct QRSayaView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var merchantVM: MerchantViewModel
 
-    private let qrImage = generateQRCode("ASTRAPAY-MERCHANT-ID1024896745213-A01")
+    @State private var showShareSheet = false
+    @State private var savedToPhotos = false
+
+    private var qrPayload: String {
+        merchantVM.merchant?.qrPayload ?? "ASTRAPAY-MERCHANT-PLACEHOLDER"
+    }
+
+    private var qrImage: UIImage { generateQRCode(qrPayload) }
+
+    private var merchantName: String {
+        merchantVM.merchant?.name ?? "Merchant"
+    }
+
+    private var nmid: String {
+        "ID\(String((merchantVM.uid ?? "").prefix(13)).uppercased())"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -37,6 +53,14 @@ struct QRSayaView: View {
             actionRow
                 .padding(.top, 4)
 
+            if savedToPhotos {
+                Text("QR berhasil disimpan ke Foto")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.appSuccess)
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
+            }
+
             Spacer()
         }
         .padding(.horizontal, 16)
@@ -44,6 +68,9 @@ struct QRSayaView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.white.ignoresSafeArea())
         .navigationBarHidden(true)
+        .sheet(isPresented: $showShareSheet) {
+            QRShareSheet(image: qrImage)
+        }
     }
 
     private var headerSection: some View {
@@ -73,13 +100,13 @@ struct QRSayaView: View {
 
     private var qrCard: some View {
         VStack(spacing: 3) {
-            Text("Martabak Bang Jarwo")
+            Text(merchantName)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, alignment: .center)
 
-            Text("NMID : ID1024896745213 · A01")
+            Text("NMID : \(nmid)")
                 .font(.system(size: 11.5))
                 .foregroundStyle(Color.appTextTertiary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -112,7 +139,13 @@ struct QRSayaView: View {
 
     private var actionRow: some View {
         HStack(spacing: 16) {
-            Button {} label: {
+            Button {
+                UIImageWriteToSavedPhotosAlbum(qrImage, nil, nil, nil)
+                withAnimation { savedToPhotos = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation { savedToPhotos = false }
+                }
+            } label: {
                 Label("Simpan", systemImage: "square.and.arrow.down")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color.appTextPrimary)
@@ -124,7 +157,7 @@ struct QRSayaView: View {
                     )
             }
 
-            Button {} label: {
+            Button { showShareSheet = true } label: {
                 Label("Bagikan", systemImage: "square.and.arrow.up")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(Color.white)
@@ -139,8 +172,17 @@ struct QRSayaView: View {
     }
 }
 
+private struct QRShareSheet: UIViewControllerRepresentable {
+    let image: UIImage
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [image], applicationActivities: nil)
+    }
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 #Preview {
     NavigationStack {
         QRSayaView()
+            .environmentObject(MerchantViewModel())
     }
 }

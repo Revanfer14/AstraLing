@@ -6,17 +6,20 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct TambahMenuView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var merchantVM: MerchantViewModel
 
     @State private var name: String = ""
     @State private var priceText: String = ""
     @State private var selectedCategory: String = ""
+    @State private var selectedPhotoItem: PhotosPickerItem? = nil
+    @State private var selectedPhoto: UIImage? = nil
     @FocusState private var priceFocused: Bool
 
     private let categories = ["Makanan", "Minuman", "Camilan", "Dessert"]
-
     private let labelColor = Color.appTextSecondary
     private let fieldBg    = Color.appBackground
     private let greyText   = Color.appTextTertiary
@@ -95,17 +98,33 @@ struct TambahMenuView: View {
                     }
                 }
 
-                Button {} label: {
-                    Label("Simpan Menu", systemImage: "square.and.arrow.down")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 50)
-                                .fill(Color.appPrimaryPressed)
-                        )
+                Button {
+                    let price = Int(priceText) ?? 0
+                    guard !name.isEmpty, price > 0 else { return }
+                    Task {
+                        await merchantVM.addMenuItem(name: name, price: price, image: selectedPhoto)
+                        if merchantVM.errorMessage == nil { dismiss() }
+                    }
+                } label: {
+                    Group {
+                        if merchantVM.isSaving {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(.white)
+                        } else {
+                            Label("Simpan Menu", systemImage: "square.and.arrow.down")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color.white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 50)
+                            .fill(name.isEmpty || priceText.isEmpty ? Color.appPrimaryPressed.opacity(0.5) : Color.appPrimaryPressed)
+                    )
                 }
+                .disabled(name.isEmpty || priceText.isEmpty || merchantVM.isSaving)
                 .padding(.top, 28)
                 .padding(.bottom, 32)
             }
@@ -114,6 +133,14 @@ struct TambahMenuView: View {
         .background(fieldBg.ignoresSafeArea())
         .navigationBarHidden(true)
         .onTapGesture { priceFocused = false }
+        .onChange(of: selectedPhotoItem) { _, item in
+            Task {
+                if let data = try? await item?.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    selectedPhoto = image
+                }
+            }
+        }
     }
 
     private var headerRow: some View {
@@ -142,25 +169,37 @@ struct TambahMenuView: View {
 
     private var photoSection: some View {
         VStack(spacing: 5) {
-            ZStack(alignment: .bottomTrailing) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.Token.blue100)
-                        .frame(width: 96, height: 96)
-                    Image(systemName: "photo")
-                        .font(.system(size: 28))
-                        .foregroundStyle(primaryBlue.opacity(0.4))
+            PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                ZStack(alignment: .bottomTrailing) {
+                    Group {
+                        if let photo = selectedPhoto {
+                            Image(uiImage: photo)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 96, height: 96)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                        } else {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.Token.blue100)
+                                    .frame(width: 96, height: 96)
+                                Image(systemName: "photo")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(primaryBlue.opacity(0.4))
+                            }
+                        }
+                    }
+                    ZStack {
+                        Circle()
+                            .fill(primaryBlue)
+                            .frame(width: 34, height: 34)
+                            .overlay(Circle().stroke(Color.white, lineWidth: 3))
+                        Image(systemName: "plus")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .offset(x: 4, y: 4)
                 }
-                ZStack {
-                    Circle()
-                        .fill(primaryBlue)
-                        .frame(width: 34, height: 34)
-                        .overlay(Circle().stroke(Color.white, lineWidth: 3))
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-                .offset(x: 4, y: 4)
             }
 
             Text("Tambahkan foto menu")
@@ -186,5 +225,6 @@ struct TambahMenuView: View {
 #Preview {
     NavigationStack {
         TambahMenuView()
+            .environmentObject(MerchantViewModel())
     }
 }
