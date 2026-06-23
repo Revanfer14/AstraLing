@@ -65,7 +65,7 @@ struct RiwayatTransaksiView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 40)
         }
-        .background(Color(red: 0.988, green: 0.988, blue: 0.988).ignoresSafeArea())
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
     }
 
@@ -74,11 +74,11 @@ struct RiwayatTransaksiView: View {
             Button { dismiss() } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -86,10 +86,10 @@ struct RiwayatTransaksiView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Riwayat Transaksi")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Semua pemasukan & penarikan")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
 
             Spacer()
@@ -97,17 +97,17 @@ struct RiwayatTransaksiView: View {
             Button {} label: {
                 HStack(spacing: 6) {
                     Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                        .foregroundStyle(Color.appPrimary)
                         .font(.system(size: 13))
                     Text("Filter")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                        .foregroundStyle(Color.appPrimary)
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                 )
             }
@@ -120,28 +120,28 @@ struct RiwayatTransaksiView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Rp 1.245.000")
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Total masuk hari ini · 42 transaksi")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
 
             Spacer()
 
             Text("Hari ini ▾")
                 .font(.system(size: 11.5))
-                .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                .foregroundStyle(Color.appPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 11)
-                        .fill(Color(red: 0.929, green: 0.965, blue: 1))
+                        .fill(Color.appSurfaceBlue)
                 )
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                .fill(Color.appBackground)
                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.08), radius: 13, x: 0, y: 8)
         )
     }
@@ -150,11 +150,11 @@ struct RiwayatTransaksiView: View {
         HStack {
             Text(section.dayLabel)
                 .font(.system(size: 12))
-                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                .foregroundStyle(Color.appTextTertiary)
             Spacer()
             Text(section.total)
                 .font(.system(size: 12))
-                .foregroundStyle(Color(red: 0.459, green: 0.459, blue: 0.459))
+                .foregroundStyle(Color.appTextSecondary)
         }
         .padding(.top, 8)
     }
@@ -167,7 +167,7 @@ struct RiwayatTransaksiView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                .fill(Color.appBackground)
                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 16, x: 0, y: 4)
         )
     }
@@ -181,10 +181,10 @@ struct RiwayatTransaksiView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.name)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                     Text("\(item.time) · \(item.method)")
                         .font(.system(size: 11.5))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                 }
 
                 Spacer()
@@ -194,12 +194,12 @@ struct RiwayatTransaksiView: View {
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(
                             item.isIncome
-                                ? Color(red: 0.071, green: 0.478, blue: 0.294)
+                                ? Color.appSuccess
                                 : Color(red: 0.851, green: 0, blue: 0)
                         )
                     Text("Berhasil")
                         .font(.system(size: 10))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                 }
             }
             .padding(.horizontal, 15)
@@ -207,7 +207,7 @@ struct RiwayatTransaksiView: View {
 
             if showDivider {
                 Rectangle()
-                    .fill(Color(red: 0.941, green: 0.941, blue: 0.941))
+                    .fill(Color.appDivider)
                     .frame(height: 1)
                     .padding(.horizontal, 15)
             }
@@ -220,8 +220,8 @@ struct RiwayatTransaksiView: View {
             RoundedRectangle(cornerRadius: 13)
                 .fill(
                     item.icon == .qris
-                        ? Color(red: 0.906, green: 0.965, blue: 0.937)
-                        : Color(red: 0.929, green: 0.965, blue: 1)
+                        ? Color.appSuccessBg
+                        : Color.appSurfaceBlue
                 )
                 .frame(width: 44, height: 44)
 
@@ -229,10 +229,10 @@ struct RiwayatTransaksiView: View {
             case .qris:
                 Text("QRIS")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                    .foregroundStyle(Color.appSuccess)
             case .transfer:
                 Image(systemName: "arrow.up")
-                    .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                    .foregroundStyle(Color.appPrimary)
                     .font(.system(size: 16, weight: .semibold))
             }
         }

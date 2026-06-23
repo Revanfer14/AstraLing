@@ -17,11 +17,11 @@ struct TambahMenuView: View {
 
     private let categories = ["Makanan", "Minuman", "Camilan", "Dessert"]
 
-    private let labelColor = Color(red: 0.459, green: 0.459, blue: 0.459)
-    private let fieldBg    = Color(red: 0.988, green: 0.988, blue: 0.988)
-    private let greyText   = Color(red: 0.557, green: 0.557, blue: 0.576)
-    private let darkText   = Color(red: 0.055, green: 0.09,  blue: 0.149)
-    private let primaryBlue = Color(red: 0, green: 0.271, blue: 0.898)
+    private let labelColor = Color.appTextSecondary
+    private let fieldBg    = Color.appBackground
+    private let greyText   = Color.appTextTertiary
+    private let darkText   = Color.appTextPrimary
+    private let primaryBlue = Color.appPrimary
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -103,7 +103,7 @@ struct TambahMenuView: View {
                         .padding(.vertical, 16)
                         .background(
                             RoundedRectangle(cornerRadius: 50)
-                                .fill(Color(red: 0.024, green: 0.369, blue: 1))
+                                .fill(Color.appPrimaryPressed)
                         )
                 }
                 .padding(.top, 28)
@@ -132,7 +132,7 @@ struct TambahMenuView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Tambah Menu Baru")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Lengkapi detail menu")
                     .font(.system(size: 12))
                     .foregroundStyle(greyText)
@@ -145,7 +145,7 @@ struct TambahMenuView: View {
             ZStack(alignment: .bottomTrailing) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color(red: 0.839, green: 0.914, blue: 1))
+                        .fill(Color.Token.blue100)
                         .frame(width: 96, height: 96)
                     Image(systemName: "photo")
                         .font(.system(size: 28))

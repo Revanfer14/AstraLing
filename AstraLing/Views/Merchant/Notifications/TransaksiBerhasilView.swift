@@ -10,11 +10,11 @@ import SwiftUI
 struct TransaksiBerhasilView: View {
     @Environment(\.dismiss) private var dismiss
 
-    private let greenDark    = Color(red: 0.071, green: 0.478, blue: 0.294)
-    private let greenLight   = Color(red: 0.906, green: 0.965, blue: 0.937)
-    private let darkText     = Color(red: 0.055, green: 0.09,  blue: 0.149)
-    private let greyText     = Color(red: 0.557, green: 0.557, blue: 0.576)
-    private let dividerColor = Color(red: 0.941, green: 0.941, blue: 0.941)
+    private let greenDark    = Color.appSuccess
+    private let greenLight   = Color.appSuccessBg
+    private let darkText     = Color.appTextPrimary
+    private let greyText     = Color.appTextTertiary
+    private let dividerColor = Color.appDivider
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -38,14 +38,14 @@ struct TransaksiBerhasilView: View {
                     .padding(.bottom, 48)
             }
         }
-        .background(Color(red: 0.988, green: 0.988, blue: 0.988).ignoresSafeArea())
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
     }
 
     private var heroSection: some View {
         VStack(spacing: 7) {
             Capsule()
-                .fill(Color(red: 0.102, green: 0.102, blue: 0.102))
+                .fill(Color.appTextPrimary)
                 .frame(width: 112, height: 32)
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 11)

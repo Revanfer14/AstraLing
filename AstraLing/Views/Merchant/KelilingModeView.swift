@@ -175,7 +175,7 @@ struct KelilingModeView: View {
             if let pin = activePing {
                 MapPolyline(coordinates: [merchantCenter, pin.coordinate])
                     .stroke(
-                        Color(red: 0, green: 0.271, blue: 0.898),
+                        Color.appPrimary,
                         style: StrokeStyle(lineWidth: 7, lineCap: .round, dash: [0, 13])
                     )
 
@@ -223,7 +223,7 @@ struct KelilingModeView: View {
         VStack(spacing: 0) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                    .fill(Color.appPrimary)
                     .frame(width: 40, height: 40)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
@@ -298,7 +298,7 @@ struct KelilingModeView: View {
                         .frame(width: 46, height: 46)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 6, x: 0, y: 2)
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -306,21 +306,21 @@ struct KelilingModeView: View {
             HStack(spacing: 9) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 9)
-                        .fill(Color(red: 0.906, green: 0.965, blue: 0.937))
+                        .fill(Color.appSuccessBg)
                         .frame(width: 34, height: 34)
                     Image(systemName: "figure.walk")
-                        .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                        .foregroundStyle(Color.appSuccess)
                         .font(.system(size: 15, weight: .medium))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Kamu sedang OTW ke \(pin.name)")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                         .lineLimit(1)
                     Text("\(pin.name) sudah diberi tahu · 120 m lagi")
                         .font(.system(size: 9.5))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                         .lineLimit(1)
                 }
 
@@ -328,12 +328,12 @@ struct KelilingModeView: View {
 
                 Text("± 2 mnt")
                     .font(.system(size: 10))
-                    .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                    .foregroundStyle(Color.appPrimary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(red: 0.839, green: 0.914, blue: 1))
+                            .fill(Color.Token.blue100)
                     )
             }
             .padding(.horizontal, 11)
@@ -359,7 +359,7 @@ struct KelilingModeView: View {
                     HStack(spacing: 11) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 13)
-                                .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                                .fill(Color.appPrimary)
                                 .frame(width: 42, height: 42)
                             Image(systemName: "fork.knife")
                                 .foregroundStyle(.white)
@@ -369,11 +369,11 @@ struct KelilingModeView: View {
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Martabak Bang Jarwo")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                                .foregroundStyle(Color.appTextPrimary)
                                 .lineLimit(1)
                             Text("AstraMerchant · ID 0812****34")
                                 .font(.system(size: 11))
-                                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                                .foregroundStyle(Color.appTextTertiary)
                         }
                     }
                 }
@@ -386,10 +386,10 @@ struct KelilingModeView: View {
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(red: 0.929, green: 0.965, blue: 1))
+                            .fill(Color.appSurfaceBlue)
                             .frame(width: 40, height: 40)
                         Image(systemName: "chart.line.uptrend.xyaxis")
-                            .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                            .foregroundStyle(Color.appPrimary)
                             .font(.system(size: 15, weight: .semibold))
                     }
                 }
@@ -398,8 +398,8 @@ struct KelilingModeView: View {
             HStack(spacing: 10) {
                 Circle()
                     .fill(isVisible
-                          ? Color(red: 0.071, green: 0.478, blue: 0.294)
-                          : Color(red: 0.557, green: 0.557, blue: 0.576))
+                          ? Color.appSuccess
+                          : Color.appTextTertiary)
                     .frame(width: 9, height: 9)
                     .overlay(
                         Circle()
@@ -412,22 +412,22 @@ struct KelilingModeView: View {
                     Text(isVisible ? "Sedang berjualan" : "Sedang tidak berjualan")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(isVisible
-                                         ? Color(red: 0.071, green: 0.478, blue: 0.294)
-                                         : Color(red: 0.557, green: 0.557, blue: 0.576))
+                                         ? Color.appSuccess
+                                         : Color.appTextTertiary)
 
                     Text(isVisible
                          ? "Tokomu aktif & bisa ditemukan customer"
                          : "Tokomu tidak terlihat oleh customer")
                         .font(.system(size: 11))
                         .foregroundStyle(isVisible
-                                         ? Color(red: 0.071, green: 0.478, blue: 0.294)
-                                         : Color(red: 0.557, green: 0.557, blue: 0.576))
+                                         ? Color.appSuccess
+                                         : Color.appTextTertiary)
                 }
 
                 Spacer()
 
                 Toggle("", isOn: $isVisible)
-                    .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.071, green: 0.478, blue: 0.294)))
+                    .toggleStyle(SwitchToggleStyle(tint: Color.appSuccess))
                     .labelsHidden()
             }
             .padding(.horizontal, 12)
@@ -436,8 +436,8 @@ struct KelilingModeView: View {
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isVisible
-                          ? Color(red: 0.906, green: 0.965, blue: 0.937)
-                          : Color(red: 0.941, green: 0.941, blue: 0.941))
+                          ? Color.appSuccessBg
+                          : Color.appDivider)
                     .animation(.easeInOut(duration: 0.2), value: isVisible)
             )
         }
@@ -475,7 +475,7 @@ struct KelilingModeView: View {
                         radius: 6, x: 0, y: 2
                     )
                 Image(systemName: icon)
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                     .font(.system(size: 18, weight: .medium))
             }
         }
@@ -485,14 +485,14 @@ struct KelilingModeView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Ping dari pelanggan")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                .foregroundStyle(Color.appTextPrimary)
                 .padding(.horizontal, 16)
                 .padding(.top, 28)
 
             HStack(spacing: 8) {
                 Text("\(allPings.count) customer")
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("dalam radius 500 m · update barusan")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
@@ -520,17 +520,17 @@ struct KelilingModeView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 11)
-                        .fill(Color(red: 0.941, green: 0.941, blue: 0.941))
+                        .fill(Color.appDivider)
                         .frame(width: 44, height: 44)
                     Image(systemName: "person.fill")
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                         .font(.system(size: 22))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(pin.name)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
 
                     HStack(spacing: 5) {
                         Image(systemName: "location.fill")
@@ -551,7 +551,7 @@ struct KelilingModeView: View {
                         .frame(width: 97, height: 34)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                                .fill(Color.appPrimary)
                         )
                 }
             }
@@ -570,7 +570,7 @@ struct KelilingModeView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                        .fill(Color.appPrimary)
                         .frame(width: 48, height: 48)
                     Text(pin.initial)
                         .font(.system(size: 18))
@@ -580,10 +580,10 @@ struct KelilingModeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(pin.name)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                     Text("Menunggu kamu · 120 m")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                        .foregroundStyle(Color.appSuccess)
                 }
 
                 Spacer()
@@ -613,7 +613,7 @@ struct KelilingModeView: View {
                     .padding(.horizontal, 18)
                     .padding(.bottom, 16)
                 }
-                .background(Color(red: 0.929, green: 0.965, blue: 1))
+                .background(Color.appSurfaceBlue)
 
                 VStack(spacing: 11) {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -673,14 +673,14 @@ struct KelilingModeView: View {
             VStack(alignment: .leading, spacing: 3.6) {
                 Text(text)
                     .font(.system(size: 14))
-                    .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149))
+                    .foregroundStyle(Color.appTextPrimary)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     Spacer()
                     Text(time)
                         .font(.system(size: 9.5))
-                        .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149).opacity(0.6))
+                        .foregroundStyle(Color.appTextPrimary.opacity(0.6))
                 }
             }
             .padding(.horizontal, 14)
@@ -731,7 +731,7 @@ struct KelilingModeView: View {
                     topLeadingRadius: 15, bottomLeadingRadius: 15,
                     bottomTrailingRadius: 5, topTrailingRadius: 15
                 )
-                .fill(Color(red: 0.024, green: 0.369, blue: 1))
+                .fill(Color.appPrimaryPressed)
             )
             .frame(maxWidth: 280, alignment: .leading)
         }

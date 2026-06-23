@@ -51,11 +51,11 @@ struct QRSayaView: View {
             Button { dismiss() } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149))
+                        .foregroundStyle(Color.appTextPrimary)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -63,10 +63,10 @@ struct QRSayaView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("QR Saya")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Tunjukkan ke customer untuk membayar")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
         }
     }
@@ -75,13 +75,13 @@ struct QRSayaView: View {
         VStack(spacing: 3) {
             Text("Martabak Bang Jarwo")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                .foregroundStyle(Color.appTextPrimary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             Text("NMID : ID1024896745213 · A01")
                 .font(.system(size: 11.5))
-                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                .foregroundStyle(Color.appTextTertiary)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             Image(uiImage: qrImage)
@@ -94,7 +94,7 @@ struct QRSayaView: View {
                 .padding(.bottom, 19)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color(red: 0.941, green: 0.941, blue: 0.941), lineWidth: 1)
+                        .stroke(Color.appDivider, lineWidth: 1)
                 )
 
             Color.clear.frame(height: 24)
@@ -115,12 +115,12 @@ struct QRSayaView: View {
             Button {} label: {
                 Label("Simpan", systemImage: "square.and.arrow.down")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(red: 0.839, green: 0.914, blue: 1))
+                            .fill(Color.Token.blue100)
                     )
             }
 
@@ -132,7 +132,7 @@ struct QRSayaView: View {
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                            .fill(Color.appPrimary)
                     )
             }
         }

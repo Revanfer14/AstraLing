@@ -72,21 +72,21 @@ struct TransferSaldoView: View {
             Button { dismiss() } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149))
+                        .foregroundStyle(Color.appTextPrimary)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Transfer Saldo")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Pindahkan saldo usaha ke AstraPay-mu")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
         }
     }
@@ -95,14 +95,14 @@ struct TransferSaldoView: View {
         VStack(spacing: 6) {
             Text("Masukan Jumlah")
                 .font(.system(size: 12))
-                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                .foregroundStyle(Color.appTextTertiary)
 
             ZStack {
                 Text(displayAmount)
                     .font(.system(size: 36, weight: .bold))
                     .foregroundStyle(
                         currentAmount > 0
-                            ? Color(red: 0.055, green: 0.09, blue: 0.149)
+                            ? Color.appTextPrimary
                             : Color(red: 0.753, green: 0.788, blue: 0.839)
                     )
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -133,7 +133,7 @@ struct TransferSaldoView: View {
 
             Text("Saldo usaha tersedia \(formatRupiah(availableBalance))")
                 .font(.system(size: 11.5))
-                .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                .foregroundStyle(Color.appPrimary)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
@@ -157,7 +157,7 @@ struct TransferSaldoView: View {
                     Text(chip.label)
                         .font(.system(size: 13))
                         .foregroundStyle(
-                            Color(red: 0, green: 0.271, blue: 0.898)
+                            Color.appPrimary
                         )
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
@@ -165,7 +165,7 @@ struct TransferSaldoView: View {
                             RoundedRectangle(cornerRadius: 13)
                                 .fill(
                                     selectedChip == chip.label
-                                    ? Color(red: 0.929, green: 0.965, blue: 1)
+                                    ? Color.appSurfaceBlue
                                         : Color.white
                                 )
                                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 7, x: 0, y: 4)
@@ -178,7 +178,7 @@ struct TransferSaldoView: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 12))
-            .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+            .foregroundStyle(Color.appTextTertiary)
             .kerning(0.3)
             .padding(.top, 10)
     }
@@ -187,7 +187,7 @@ struct TransferSaldoView: View {
         HStack(spacing: 13) {
             ZStack {
                 RoundedRectangle(cornerRadius: 13)
-                    .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                    .fill(Color.appPrimary)
                     .frame(width: 46, height: 46)
                 Image(systemName: "house.fill")
                     .foregroundStyle(.white)
@@ -196,20 +196,20 @@ struct TransferSaldoView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("AstraPay Saya")
                     .font(.system(size: 14.5))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Adi Saputra · 0812****34")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
             Spacer()
             Text("Pribadi")
                 .font(.system(size: 10))
-                .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                .foregroundStyle(Color.appPrimary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 7)
-                        .fill(Color(red: 0.929, green: 0.965, blue: 1))
+                        .fill(Color.appSurfaceBlue)
                 )
         }
         .padding(.horizontal, 15)
@@ -226,33 +226,33 @@ struct TransferSaldoView: View {
             HStack {
                 Text("Nominal")
                     .font(.system(size: 13.5))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
                 Spacer()
                 Text(displayAmount)
                     .font(.system(size: 13.5))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
             }
             HStack {
                 Text("Biaya transfer")
                     .font(.system(size: 13.5))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
                 Spacer()
                 Text("Gratis")
                     .font(.system(size: 13.5))
-                    .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                    .foregroundStyle(Color.appSuccess)
             }
             .padding(.bottom, 2)
             Rectangle()
-                .fill(Color(red: 0.941, green: 0.941, blue: 0.941))
+                .fill(Color.appDivider)
                 .frame(height: 1)
             HStack {
                 Text("Masuk ke AstraPay")
                     .font(.system(size: 15))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Spacer()
                 Text(displayAmount)
                     .font(.system(size: 15))
-                    .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                    .foregroundStyle(Color.appPrimary)
             }
             .padding(.top, 2)
         }
@@ -261,7 +261,7 @@ struct TransferSaldoView: View {
         .padding(.bottom, 14)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                .fill(Color.appBackground)
                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 8, x: 0, y: 4)
         )
     }
@@ -269,7 +269,7 @@ struct TransferSaldoView: View {
     private var infoBox: some View {
         Text("Saldo langsung masuk ke AstraPay pribadimu, bisa dipakai bayar atau tarik tunai kapan saja.")
             .font(.system(size: 13))
-            .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+            .foregroundStyle(Color.appSuccess)
             .lineSpacing(5.5)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14)
@@ -277,7 +277,7 @@ struct TransferSaldoView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 13)
-                    .fill(Color(red: 0.906, green: 0.965, blue: 0.937))
+                    .fill(Color.appSuccessBg)
             )
     }
 
@@ -285,12 +285,12 @@ struct TransferSaldoView: View {
         Button {} label: {
             Text("Transfer ke AstraPay")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color(red: 0.988, green: 0.988, blue: 0.988))
+                .foregroundStyle(Color.appBackground)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                        .fill(Color.appPrimary)
                 )
         }
     }

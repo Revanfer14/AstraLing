@@ -31,8 +31,8 @@ struct EditProfilView: View {
 
     private let dividerColor = Color(red: 0.925, green: 0.933, blue: 0.945)
     private let labelColor   = Color(red: 0.58,  green: 0.627, blue: 0.702)
-    private let darkText     = Color(red: 0.055, green: 0.09,  blue: 0.149)
-    private let primaryBlue  = Color(red: 0,     green: 0.271, blue: 0.898)
+    private let darkText     = Color.appTextPrimary
+    private let primaryBlue  = Color.appPrimary
 
     var body: some View {
         VStack(spacing: 0) {

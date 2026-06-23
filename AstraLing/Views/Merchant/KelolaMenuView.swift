@@ -25,10 +25,10 @@ struct KelolaMenuView: View {
     ]
 
     private let labelColor  = Color(red: 0.58,  green: 0.627, blue: 0.702)
-    private let darkText    = Color(red: 0.055, green: 0.09,  blue: 0.149)
+    private let darkText    = Color.appTextPrimary
     private let fieldBorder = Color(red: 0.906, green: 0.918, blue: 0.937)
     private let greenColor  = Color(red: 0.098, green: 0.702, blue: 0.42)
-    private let greenBg     = Color(red: 0.906, green: 0.965, blue: 0.937)
+    private let greenBg     = Color.appSuccessBg
     private let greyBg      = Color(red: 0.957, green: 0.965, blue: 0.973)
 
     var body: some View {
@@ -41,7 +41,7 @@ struct KelolaMenuView: View {
 
                     Text("MAKANAN")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                         .tracking(0.3)
 
                     ForEach($items) { $item in
@@ -58,7 +58,7 @@ struct KelolaMenuView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 24)
         }
-        .background(Color(red: 0.988, green: 0.988, blue: 0.988).ignoresSafeArea())
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
     }
 
@@ -67,7 +67,7 @@ struct KelolaMenuView: View {
             Button { dismiss() } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
@@ -78,10 +78,10 @@ struct KelolaMenuView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Kelola Menu & Harga")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Atur menu, harga, dan ketersediaan")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
         }
     }
@@ -101,7 +101,7 @@ struct KelolaMenuView: View {
                     }
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                            .fill(Color.appPrimary)
                             .frame(width: 20, height: 20)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
@@ -246,7 +246,7 @@ struct KelolaMenuView: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 50)
-                    .fill(Color(red: 0.024, green: 0.369, blue: 1))
+                    .fill(Color.appPrimaryPressed)
             )
         }
     }
