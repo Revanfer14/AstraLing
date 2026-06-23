@@ -9,8 +9,12 @@ import SwiftUI
 
 struct CustomerOnboardingView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
+    @AppStorage("hasSeenAstraLingOnboarding") private var hasSeenAstraLingOnboarding = false
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var homeVM = CustomerHomeViewModel()
+    @State private var showAstraLing = false
+    @State private var showMainMap = false
+    @State private var openMapAfterOnboarding = false
 
     private let menuItems: [MenuTileItem] = [
         MenuTileItem(title: "AstraLing",          assetName: "astraling_logo"),
@@ -62,9 +66,26 @@ struct CustomerOnboardingView: View {
         }
         .ignoresSafeArea(edges: .top)
         .task { await homeVM.load() }
+        .fullScreenCover(isPresented: $showAstraLing, onDismiss: {
+            if openMapAfterOnboarding {
+                openMapAfterOnboarding = false
+                showMainMap = true
+            }
+        }) {
+            AstraLingOnboardingView(onStart: {
+                openMapAfterOnboarding = true
+                showAstraLing = false
+            })
+        }
+        .fullScreenCover(isPresented: $showMainMap) { MainMapView() }
     }
 
     private func openAstraLing() {
+        if hasSeenAstraLingOnboarding {
+            showMainMap = true
+        } else {
+            showAstraLing = true
+        }
     }
 
     private func openAstraPoints() {
