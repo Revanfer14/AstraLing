@@ -14,39 +14,38 @@ struct CustomerTabBar: View {
         VStack(spacing: 0) {
             Divider()
             HStack(spacing: 0) {
-                CustomerTabBarItem(imageName: "tab-beranda", label: "Beranda", isActive: true,  action: {})
-                CustomerTabBarItem(imageName: "tab-promo",   label: "Promo",   isActive: false, action: {})
+                CustomerTabBarItem(systemName: "house.fill", label: "Beranda", isActive: true,  action: {})
+                CustomerTabBarItem(systemName: "tag",        label: "Promo",   isActive: false, action: {})
 
                 Spacer().frame(width: 64)
 
-                CustomerTabBarItem(imageName: "tab-riwayat", label: "Riwayat", isActive: false, action: {})
-                CustomerTabBarItem(imageName: "tab-profil",  label: "Profil",  isActive: false, action: onProfil)
+                CustomerTabBarItem(systemName: "doc.text",  label: "Riwayat", isActive: false, action: {})
+                CustomerTabBarItem(systemName: "person",    label: "Profil",  isActive: false, action: onProfil)
             }
             .padding(.horizontal, 8)
             .frame(height: 56)
-            .background(Color(UIColor.systemBackground))
+            .background(Color.appBackground)
         }
-        .background(Color(UIColor.systemBackground))
+        .background(Color.appBackground)
     }
 }
 
 private struct CustomerTabBarItem: View {
-    let imageName: String
+    let systemName: String
     let label: String
     let isActive: Bool
     let action: () -> Void
 
     private var tint: Color {
-        isActive ? Color(red: 0.44, green: 0.56, blue: 0.84) : Color(UIColor.tertiaryLabel)
+        isActive ? Color.Token.navActive : Color.appTextTertiary
     }
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(imageName)
-                    .resizable().scaledToFit()
-                    .frame(width: 20, height: 20)
-                    .colorMultiply(tint)
+                Image(systemName: systemName)
+                    .font(.system(size: 20))
+                    .foregroundColor(tint)
                 Text(label)
                     .font(.system(size: 12, weight: isActive ? .bold : .regular))
                     .foregroundColor(tint)

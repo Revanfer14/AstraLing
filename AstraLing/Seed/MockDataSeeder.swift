@@ -65,7 +65,7 @@ final class MockDataSeeder {
             ),
             MerchantSeed(
                 email: "merchant2@astraling.test",
-                name: "Martabak Manis Haji Dulah",
+                name: "Martabak Bang Jarwo",
                 category: "martabak",
                 description: "Martabak legendaris sejak 1985, isi melimpah tidak pelit.",
                 lat: -6.2215, lng: 106.8412,
@@ -75,6 +75,61 @@ final class MockDataSeeder {
                     ("Manis Keju", 35_000),
                     ("Manis Coklat Keju", 40_000),
                     ("Telur Kornet", 40_000)
+                ]
+            ),
+            MerchantSeed(
+                email: "merchant3@astraling.test",
+                name: "Batagor Cimol",
+                category: "batagor",
+                description: "Batagor dan cimol kenyal bumbu kacang khas Bandung.",
+                lat: -6.2100, lng: 106.8440,
+                balance: 900_000, astraPoints: 60,
+                menu: [
+                    ("Batagor Kuah", 12_000),
+                    ("Batagor Kering", 12_000),
+                    ("Cimol Original", 8_000),
+                    ("Cimol Pedas", 8_000)
+                ]
+            ),
+            MerchantSeed(
+                email: "merchant4@astraling.test",
+                name: "Cilok Gemoy",
+                category: "cilok",
+                description: "Cilok kenyal isi telur puyuh, saus kacang dan saus pedas.",
+                lat: -6.2050, lng: 106.8480,
+                balance: 700_000, astraPoints: 40,
+                menu: [
+                    ("Cilok Original", 5_000),
+                    ("Cilok Isi Telur", 7_000),
+                    ("Cilok Jumbo", 10_000)
+                ]
+            ),
+            MerchantSeed(
+                email: "merchant5@astraling.test",
+                name: "Soto Betawi Makyar",
+                category: "soto",
+                description: "Soto Betawi asli santan segar, daging empuk, taburan emping.",
+                lat: -6.2140, lng: 106.8395,
+                balance: 3_200_000, astraPoints: 220,
+                menu: [
+                    ("Soto Betawi Biasa", 25_000),
+                    ("Soto Betawi Spesial", 32_000),
+                    ("Es Jeruk", 7_000),
+                    ("Kerupuk", 3_000)
+                ]
+            ),
+            MerchantSeed(
+                email: "merchant6@astraling.test",
+                name: "Cakwe & Odading Mas Boing",
+                category: "cakwe",
+                description: "Cakwe goreng renyah dan odading viral, cocok buat sarapan.",
+                lat: -6.2070, lng: 106.8510,
+                balance: 1_100_000, astraPoints: 75,
+                menu: [
+                    ("Cakwe Polos", 5_000),
+                    ("Cakwe Isi Udang", 8_000),
+                    ("Odading", 6_000),
+                    ("Kopi Susu", 10_000)
                 ]
             )
         ]
