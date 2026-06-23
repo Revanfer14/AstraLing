@@ -26,6 +26,7 @@ struct MainMapView: View {
     @State private var mapCenter: CLLocationCoordinate2D?
     @State private var sheetDetent: PresentationDetent = .height(360)
     @State private var selectedMerchant: NearbyMerchant?
+    @State private var showScanner = false
 
     private let minSheetHeight: CGFloat = 85
 
@@ -61,6 +62,9 @@ struct MainMapView: View {
                     .interactiveDismissDisabled()
                     .presentationCornerRadius(26)
                     .presentationBackground(Color.appSurface)
+                    .fullScreenCover(isPresented: $showScanner) {
+                        QRScannerView()
+                    }
             }
 
             topBar
@@ -184,7 +188,9 @@ struct MainMapView: View {
 
                 Spacer()
 
-                Button {} label: {
+                Button {
+                    showScanner = true
+                } label: {
                     Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.appTextOnPrimary)
