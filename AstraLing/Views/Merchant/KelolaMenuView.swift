@@ -90,13 +90,28 @@ struct KelolaMenuView: View {
     private func menuCard(item: Binding<EditableMenuItem>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .top, spacing: 13) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(item.wrappedValue.photoColor)
-                        .frame(width: 60, height: 60)
-                    Image(systemName: "fork.knife")
-                        .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.8))
+                ZStack(alignment: .bottomTrailing) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(item.wrappedValue.photoColor)
+                            .frame(width: 60, height: 60)
+                        Image(systemName: "fork.knife")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                            .frame(width: 20, height: 20)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.white, lineWidth: 2)
+                            )
+                        Image(systemName: "plus")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                    .offset(x: 3, y: 3)
                 }
 
                 VStack(alignment: .leading, spacing: 11) {
@@ -214,12 +229,7 @@ struct KelolaMenuView: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 11)
-                    .fill(isSelected ? activeBg : greyBg)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 11)
-                            .stroke(isSelected ? activeColor : Color.clear, lineWidth: 1.5)
-                    )
-            )
+                    .fill(isSelected ? activeBg : greyBg)            )
         }
     }
 
