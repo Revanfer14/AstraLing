@@ -9,6 +9,8 @@ import SwiftUI
 
 struct MerchantDashboardView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var authViewModel: AuthViewModel
+    @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -45,7 +47,24 @@ struct MerchantDashboardView: View {
                 rekapCard
                     .padding(.top, 12)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 48)
+
+                Button {
+                    authViewModel.logout()
+                    selectedRoleRaw = ""
+                } label: {
+                    Text("Keluar Akun")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.red)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.red.opacity(0.1))
+                        )
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 32)
+                .padding(.bottom, 48)
             }
         }
         .background(Color(red: 0.988, green: 0.988, blue: 0.988).ignoresSafeArea())
@@ -135,9 +154,9 @@ struct MerchantDashboardView: View {
                 NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true)) {
                     quickActionItem(icon: "qrcode", label: "QR Saya")
                 }
-                NavigationLink(destination: EditProfilView().navigationBarBackButtonHidden(true)) {
-                    quickActionItem(icon: "square.and.pencil", label: "Edit Profile")
-                }
+//                NavigationLink(destination: EditProfilView().navigationBarBackButtonHidden(true)) {
+//                    quickActionItem(icon: "square.and.pencil", label: "Edit Profile")
+//                }
             }
             .padding(.top, 11)
         }

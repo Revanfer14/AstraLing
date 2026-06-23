@@ -66,7 +66,7 @@ struct EditProfilView: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(darkText)
                         Spacer()
-                        Button {} label: {
+                        NavigationLink(destination: KelolaMenuView().navigationBarBackButtonHidden(true)) {
                             Label("Ubah Menu & Harga", systemImage: "square.and.pencil")
                                 .font(.system(size: 14))
                                 .foregroundStyle(primaryBlue)

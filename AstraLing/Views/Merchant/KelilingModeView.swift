@@ -40,6 +40,7 @@ struct KelilingModeView: View {
     @State private var activePing: PinItem? = nil
     @State private var messageText = ""
     @State private var showDashboard = false
+    @State private var showEditProfile = false
 
     private let merchantCenter = CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
     
@@ -116,6 +117,14 @@ struct KelilingModeView: View {
             )) {
                 MerchantDashboardView()
             }
+            .fullScreenCover(isPresented: Binding(
+                get: { showEditProfile && isVisible },
+                set: { if !$0 { showEditProfile = false } }
+            )) {
+                NavigationStack {
+                    EditProfilView()
+                }
+            }
         }
         .onChange(of: isVisible) { _, newValue in
             if newValue { selectedDetent = expandedDetent }
@@ -125,6 +134,14 @@ struct KelilingModeView: View {
             set: { if !$0 { showDashboard = false } }
         )) {
             MerchantDashboardView()
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { showEditProfile && !isVisible },
+            set: { if !$0 { showEditProfile = false } }
+        )) {
+            NavigationStack {
+                EditProfilView()
+            }
         }
     }
     
@@ -336,24 +353,31 @@ struct KelilingModeView: View {
     private var floatingHeader: some View {
         VStack(spacing: 11) {
             HStack(spacing: 11) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 13)
-                        .fill(Color(red: 0, green: 0.271, blue: 0.898))
-                        .frame(width: 42, height: 42)
-                    Image(systemName: "fork.knife")
-                        .foregroundStyle(.white)
-                        .font(.system(size: 16, weight: .semibold))
-                }
+                Button {
+                    showEditProfile = true
+                } label: {
+                    HStack(spacing: 11) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 13)
+                                .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                                .frame(width: 42, height: 42)
+                            Image(systemName: "fork.knife")
+                                .foregroundStyle(.white)
+                                .font(.system(size: 16, weight: .semibold))
+                        }
 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Martabak Bang Jarwo")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
-                        .lineLimit(1)
-                    Text("AstraMerchant · ID 0812****34")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Martabak Bang Jarwo")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                                .lineLimit(1)
+                            Text("AstraMerchant · ID 0812****34")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
 
                 Spacer()
 
