@@ -220,9 +220,12 @@ struct KelilingModeView: View {
             }
         case .transactionSuccess(let txn):
             TransaksiBerhasilView(transaction: txn) {
-                if let pingId = txn.pingId {
+                let pingId = txn.pingId
+                    ?? merchantVM.activePings.first(where: { $0.customerUid == txn.customerUid })?.id
+                if let pingId {
                     Task { await merchantVM.completePing(pingId: pingId) }
                 }
+                setActivePing(nil)
             }
         }
     }
