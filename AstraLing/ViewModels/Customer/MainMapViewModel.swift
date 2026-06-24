@@ -9,6 +9,7 @@ import Combine
 import CoreLocation
 import FirebaseAuth
 import FirebaseFirestore
+import MapKit
 
 struct NearbyMerchant: Identifiable {
     let id: String
@@ -19,24 +20,41 @@ struct NearbyMerchant: Identifiable {
     let isFavorite: Bool
     var distanceLabel: String
     var walkLabel: String
+    let bannerUrl: String?
+}
+
+struct ActivePing: Identifiable {
+    let id: String
+    let merchantName: String
+    let merchantUid: String
+    let status: PingStatus
+    let interestedItems: [String]
+    let createdAt: Date?
 }
 
 @MainActor
 final class MainMapViewModel: ObservableObject {
     @Published var merchants: [NearbyMerchant] = []
     @Published var balance: Int = 0
+    @Published var activePings: [ActivePing] = []
+    @Published var routeCoordinates: [CLLocationCoordinate2D] = []
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
+    private var pingsListener: ListenerRegistration?
     private var rawMerchants: [Merchant] = []
+    private var rawPings: [Ping] = []
     private var favoriteUids: Set<String> = []
     private var userLocation: CLLocation?
     private var lastWrittenLocation: CLLocation?
+    private var customerName: String = ""
+    private var lastPingId: String?
 
     func start() {
         Task {
             await loadCustomer()
             attachListener()
+            attachPingsListener()
         }
     }
 
@@ -49,6 +67,8 @@ final class MainMapViewModel: ObservableObject {
     func stop() {
         listener?.remove()
         listener = nil
+        pingsListener?.remove()
+        pingsListener = nil
     }
 
     func isFavorite(_ uid: String) -> Bool { favoriteUids.contains(uid) }
@@ -110,12 +130,111 @@ final class MainMapViewModel: ObservableObject {
         }
     }
 
+    func activePing(for merchantUid: String) -> ActivePing? {
+        activePings.first { $0.merchantUid == merchantUid }
+    }
+
+    func sendPing(to merchant: NearbyMerchant) {
+        guard let uid = Auth.auth().currentUser?.uid, let loc = userLocation else { return }
+        let coord = loc.coordinate
+        let ping = Ping(
+            customerUid: uid,
+            merchantUid: merchant.id,
+            customerName: customerName,
+            customerLocation: GeoPoint(latitude: coord.latitude, longitude: coord.longitude),
+            status: .active,
+            updatedAt: Timestamp(date: Date())
+        )
+        let optimistic = ActivePing(
+            id: UUID().uuidString,
+            merchantName: merchant.name,
+            merchantUid: merchant.id,
+            status: .active,
+            interestedItems: [],
+            createdAt: Date()
+        )
+        activePings.insert(optimistic, at: 0)
+        Task {
+            do {
+                let ref = try db.collection("pings").addDocument(from: ping)
+                lastPingId = ref.documentID
+                createChatWithOpeningMessage(merchant: merchant, pingId: ref.documentID, customerUid: uid)
+            } catch {
+                print("sendPing: FAILED \(error)")
+            }
+        }
+    }
+
+    func updateRoute(to merchantCoord: CLLocationCoordinate2D) {
+        guard let userLoc = userLocation else { return }
+        let userCoord = userLoc.coordinate
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoord))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: userCoord))
+        request.transportType = .walking
+        MKDirections(request: request).calculate { [weak self] response, _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if let polyline = response?.routes.first?.polyline {
+                    self.routeCoordinates = polyline.coordinates
+                } else {
+                    self.routeCoordinates = [merchantCoord, userCoord]
+                }
+            }
+        }
+    }
+
+    func clearRoute() {
+        routeCoordinates = []
+    }
+
+    private func createChatWithOpeningMessage(merchant: NearbyMerchant, pingId: String, customerUid: String) {
+        let chatId = ChatID.make(customerUid: customerUid, merchantUid: merchant.id)
+        let opening = "Halo kak! Boleh mampir ke lokasi saya? Saya tunggu ya 🙏"
+        let chat = Chat(
+            customerUid: customerUid,
+            merchantUid: merchant.id,
+            participantUids: [customerUid, merchant.id],
+            customerName: customerName,
+            merchantName: merchant.name,
+            lastMessage: opening,
+            lastMessageAt: Timestamp(date: Date()),
+            pingId: pingId
+        )
+        let msg = ChatMessage(senderUid: customerUid, senderRole: .customer, text: opening)
+        Task {
+            do {
+                try db.collection("chats").document(chatId).setData(from: chat, merge: true)
+                try db.collection("chats").document(chatId).collection("messages").addDocument(from: msg)
+            } catch {
+                print("createChat: FAILED \(error)")
+            }
+        }
+    }
+
+    func cancelPing(pingId: String? = nil) {
+        let id = pingId ?? lastPingId
+        guard let id else { return }
+        Task {
+            do {
+                try await db.collection("pings").document(id).updateData([
+                    "status": PingStatus.cancelled.rawValue,
+                    "updatedAt": Timestamp(date: Date())
+                ])
+                if id == lastPingId { lastPingId = nil }
+            } catch {
+                print("cancelPing: FAILED \(error)")
+            }
+        }
+    }
+
     private func loadCustomer() async {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         do {
             let doc = try await db.collection("customers").document(uid).getDocument()
             guard let data = doc.data() else { return }
             balance = data["balance"] as? Int ?? 0
+            customerName = data["name"] as? String ?? ""
             let favs = data["favorites"] as? [String] ?? []
             favoriteUids = Set(favs)
         } catch {}
@@ -129,6 +248,38 @@ final class MainMapViewModel: ObservableObject {
                 self.rawMerchants = docs.compactMap { try? $0.data(as: Merchant.self) }
                 self.rebuild()
             }
+    }
+
+    private func attachPingsListener() {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        pingsListener = db.collection("pings")
+            .whereField("customerUid", isEqualTo: uid)
+            .whereField("status", in: [PingStatus.active.rawValue, PingStatus.onTheWay.rawValue])
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self, let docs = snapshot?.documents else { return }
+                self.rawPings = docs.compactMap { try? $0.data(as: Ping.self) }
+                self.rebuildActivePings()
+            }
+    }
+
+    private func rebuildActivePings() {
+        let merchantMap = Dictionary(uniqueKeysWithValues: rawMerchants.compactMap { m -> (String, String)? in
+            guard let uid = m.uid else { return nil }
+            return (uid, m.name)
+        })
+        activePings = rawPings.compactMap { ping in
+            guard let id = ping.id else { return nil }
+            let merchantName = merchantMap[ping.merchantUid] ?? ping.merchantUid
+            return ActivePing(
+                id: id,
+                merchantName: merchantName,
+                merchantUid: ping.merchantUid,
+                status: ping.status,
+                interestedItems: ping.interestedItems,
+                createdAt: ping.createdAt?.dateValue()
+            )
+        }
+        .sorted { ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast) }
     }
 
     private func rebuild() {
@@ -150,7 +301,8 @@ final class MainMapViewModel: ObservableObject {
                 distanceMeters: distMeters,
                 isFavorite: favoriteUids.contains(uid),
                 distanceLabel: distLabel,
-                walkLabel: walkLabel
+                walkLabel: walkLabel,
+                bannerUrl: merchant.bannerUrl
             )
         }
         .sorted {
@@ -160,6 +312,7 @@ final class MainMapViewModel: ObservableObject {
             default: return false
             }
         }
+        rebuildActivePings()
     }
 
     private func distLabel(for meters: Double?) -> String {

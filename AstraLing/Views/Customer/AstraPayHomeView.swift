@@ -14,6 +14,7 @@ struct AstraPayHomeView: View {
     @StateObject private var homeVM = CustomerHomeViewModel()
     @State private var showAstraLing = false
     @State private var showMainMap = false
+    @State private var showAstraPoints = false
     @State private var openMapAfterOnboarding = false
     @State private var selectedTab: CustomerTab = .beranda
 
@@ -83,6 +84,7 @@ struct AstraPayHomeView: View {
             })
         }
         .fullScreenCover(isPresented: $showMainMap) { MainMapView() }
+        .fullScreenCover(isPresented: $showAstraPoints) { AstraPointsView() }
     }
 
     private func openAstraLing() {
@@ -94,6 +96,7 @@ struct AstraPayHomeView: View {
     }
 
     private func openAstraPoints() {
+        showAstraPoints = true
     }
 }
 

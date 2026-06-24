@@ -12,6 +12,7 @@ struct MerchantDetailSheet: View {
     let isFavorite: Bool
     let onBack: () -> Void
     let onToggleFavorite: () -> Void
+    let onPing: () -> Void
 
     @StateObject private var vm = MerchantDetailViewModel()
 
@@ -229,7 +230,7 @@ struct MerchantDetailSheet: View {
     private var pingButton: some View {
         HStack {
             Spacer()
-            Button(action: {}) {
+            Button(action: onPing) {
                 HStack(spacing: 8) {
                     Image(systemName: "hand.rays")
                         .font(.system(size: 14, weight: .bold))

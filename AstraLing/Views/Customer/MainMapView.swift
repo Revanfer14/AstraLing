@@ -27,22 +27,49 @@ struct MainMapView: View {
     @State private var sheetDetent: PresentationDetent = .height(360)
     @State private var selectedMerchant: NearbyMerchant?
     @State private var showScanner = false
+    @State private var showPingSuccess = false
+    @State private var showActivePings = false
+    @State private var showCancelPing = false
 
     private let minSheetHeight: CGFloat = 85
+
+    private var activePingMerchant: NearbyMerchant? {
+        guard let selected = selectedMerchant,
+              vm.activePing(for: selected.id) != nil else { return nil }
+        return selected
+    }
+
+    private var routeKey: String {
+        guard let m = activePingMerchant,
+              let ping = vm.activePing(for: m.id) else { return "" }
+        return "\(m.id)_\(ping.status.rawValue)"
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
             Map(position: $camera) {
                 UserAnnotation()
                 ForEach(vm.merchants) { merchant in
+                    let isActivePing = activePingMerchant?.id == merchant.id
                     Annotation(merchant.name, coordinate: merchant.coordinate) {
-                        MerchantMapPin(name: merchant.name, isSelected: selectedMerchant?.id == merchant.id)
-                            .onTapGesture {
-                                selectedMerchant = merchant
-                                sheetDetent = .height(360)
-                                focus(on: merchant)
+                        ZStack(alignment: .bottom) {
+                            if isActivePing {
+                                MerchantMapBanner(name: merchant.name, bannerUrl: merchant.bannerUrl)
+                                    .offset(y: -58)
+                                    .allowsHitTesting(false)
                             }
+                            MerchantMapPin(name: merchant.name, isSelected: selectedMerchant?.id == merchant.id)
+                                .onTapGesture {
+                                    selectedMerchant = merchant
+                                    sheetDetent = .height(360)
+                                    focus(on: merchant)
+                                }
+                        }
                     }
+                }
+                if vm.routeCoordinates.count >= 2 {
+                    MapPolyline(coordinates: vm.routeCoordinates)
+                        .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                 }
             }
             .ignoresSafeArea()
@@ -52,9 +79,13 @@ struct MainMapView: View {
             .sheet(isPresented: .constant(true)) {
                 sheetContent
                     .presentationDetents(
-                        selectedMerchant != nil
-                            ? [.height(360), .large]
-                            : [.height(minSheetHeight), .height(360), .large],
+                        {
+                            let hasChat = selectedMerchant.map { vm.activePing(for: $0.id) != nil } ?? false
+                            if selectedMerchant == nil || hasChat {
+                                return [.height(minSheetHeight), .height(360), .large]
+                            }
+                            return [.height(360), .large]
+                        }(),
                         selection: $sheetDetent
                     )
                     .presentationDragIndicator(.visible)
@@ -64,6 +95,43 @@ struct MainMapView: View {
                     .presentationBackground(Color.appSurface)
                     .fullScreenCover(isPresented: $showScanner) {
                         QRScannerView()
+                    }
+                    .fullScreenCover(isPresented: $showPingSuccess) {
+                        PingSuccessDialog(
+                            onMonitor: {
+                                showPingSuccess = false
+                                sheetDetent = .height(minSheetHeight)
+                            },
+                            onCancel: {
+                                vm.cancelPing()
+                                showPingSuccess = false
+                                selectedMerchant = nil
+                            }
+                        )
+                        .presentationBackground(.clear)
+                    }
+                    .fullScreenCover(isPresented: $showCancelPing) {
+                        CancelPingDialog(
+                            onCancelPing: {
+                                if let s = selectedMerchant, let a = vm.activePing(for: s.id) {
+                                    vm.cancelPing(pingId: a.id)
+                                }
+                                showCancelPing = false
+                                selectedMerchant = nil
+                                sheetDetent = .height(minSheetHeight)
+                            },
+                            onContinue: { showCancelPing = false }
+                        )
+                        .presentationBackground(.clear)
+                    }
+                    .sheet(isPresented: $showActivePings) {
+                        ActivePingsSheet(pings: vm.activePings) { pingId in
+                            vm.cancelPing(pingId: pingId)
+                        }
+                        .presentationDetents([.medium, .large])
+                        .presentationDragIndicator(.visible)
+                        .presentationCornerRadius(26)
+                        .presentationBackground(Color.appSurface)
                     }
             }
 
@@ -88,24 +156,52 @@ struct MainMapView: View {
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: isFarFromUser)
-        #if DEBUG
         .overlay(alignment: .bottomLeading) {
-            Button {
-                vm.scatterMerchantsAroundMe()
-            } label: {
-                Image(systemName: "mappin.and.ellipse")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(.appPrimary)
-                    .frame(width: 46, height: 46)
-                    .background(Color.appSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
+            VStack(alignment: .leading, spacing: 12) {
+                if !vm.activePings.isEmpty {
+                    Button {
+                        showActivePings = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "hand.rays.fill")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundColor(.appPrimary)
+                                .frame(width: 46, height: 46)
+                                .background(Color.appSurface)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
+
+                            Text("\(vm.activePings.count)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 18, height: 18)
+                                .background(Color.appPrimary)
+                                .clipShape(Circle())
+                                .offset(x: 6, y: -6)
+                        }
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                }
+
+                #if DEBUG
+                Button {
+                    vm.scatterMerchantsAroundMe()
+                } label: {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.appPrimary)
+                        .frame(width: 46, height: 46)
+                        .background(Color.appSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
+                }
+                #endif
             }
             .padding(.leading, 24)
             .padding(.bottom, minSheetHeight + 16)
         }
-        #endif
+        .animation(.easeInOut(duration: 0.2), value: isFarFromUser)
+        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: vm.activePings.count)
         .onAppear {
             location.requestWhenInUse()
             vm.start()
@@ -119,6 +215,15 @@ struct MainMapView: View {
                     center: newLoc.coordinate,
                     span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
                 ))
+            }
+        }
+        .onChange(of: routeKey) { _, key in
+            if let m = activePingMerchant,
+               let ping = vm.activePing(for: m.id),
+               ping.status == .onTheWay {
+                vm.updateRoute(to: m.coordinate)
+            } else {
+                vm.clearRoute()
             }
         }
         .onDisappear { vm.stop() }
@@ -211,17 +316,35 @@ struct MainMapView: View {
     @ViewBuilder
     private var sheetContent: some View {
         if let selected = selectedMerchant {
-            MerchantDetailSheet(
-                merchant: selected,
-                isFavorite: vm.isFavorite(selected.id),
-                onBack: {
-                    selectedMerchant = nil
-                    sheetDetent = .height(360)
-                },
-                onToggleFavorite: {
-                    vm.toggleFavorite(selected.id)
-                }
-            )
+            if let active = vm.activePing(for: selected.id) {
+                PingChatSheet(
+                    merchant: selected,
+                    status: active.status,
+                    isFavorite: vm.isFavorite(selected.id),
+                    onBack: {
+                        selectedMerchant = nil
+                        sheetDetent = .height(360)
+                    },
+                    onToggleFavorite: { vm.toggleFavorite(selected.id) },
+                    onRequestCancel: { showCancelPing = true }
+                )
+            } else {
+                MerchantDetailSheet(
+                    merchant: selected,
+                    isFavorite: vm.isFavorite(selected.id),
+                    onBack: {
+                        selectedMerchant = nil
+                        sheetDetent = .height(360)
+                    },
+                    onToggleFavorite: {
+                        vm.toggleFavorite(selected.id)
+                    },
+                    onPing: {
+                        vm.sendPing(to: selected)
+                        showPingSuccess = true
+                    }
+                )
+            }
         } else {
             listContent
         }

@@ -13,14 +13,14 @@ struct NearbyMerchantCard: View {
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.appSurfaceBlue)
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white)
                 Image(systemName: "fork.knife")
                     .font(.system(size: 32))
                     .foregroundColor(Color.appPrimary.opacity(0.5))
             }
-            .frame(width: 100, height: 100)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .frame(width: 180, height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(merchant.name)
@@ -28,7 +28,7 @@ struct NearbyMerchantCard: View {
                     .foregroundColor(.appTextPrimary)
                     .lineLimit(2)
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 10) {
                     if !merchant.distanceLabel.isEmpty {
                         HStack(spacing: 6) {
                             Image(systemName: "location.fill")
@@ -56,6 +56,6 @@ struct NearbyMerchantCard: View {
         .padding(4)
         .background(Color.appSurface)
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: Color.Token.shadowBlueGrey.opacity(0.5), radius: 25, y: 6)
+        .shadow(color: Color.Token.shadowBlueGrey.opacity(0.5), radius: 25, y: 12)
     }
 }
