@@ -56,20 +56,12 @@ struct TransaksiBerhasilView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
+        .ignoresSafeArea()
     }
 
     private var heroSection: some View {
         VStack(spacing: 7) {
-            Capsule()
-                .fill(Color.appTextPrimary)
-                .frame(width: 112, height: 32)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 11)
-
             ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(width: 88, height: 88)
                 ZStack {
                     RoundedRectangle(cornerRadius: 32)
                         .fill(Color.white)
@@ -79,6 +71,7 @@ struct TransaksiBerhasilView: View {
                         .foregroundStyle(greenDark)
                 }
             }
+            .padding(.top , 54)
 
             Text("Pembayaran Berhasil")
                 .font(.system(size: 24, weight: .bold))
@@ -207,3 +200,5 @@ struct TransaksiBerhasilView: View {
         }
     }
 }
+
+

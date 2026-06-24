@@ -52,16 +52,11 @@ struct TransferBerhasilView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
+        .ignoresSafeArea()
     }
 
     private var heroSection: some View {
         VStack(spacing: 7) {
-            Capsule()
-                .fill(Color.white.opacity(0.3))
-                .frame(width: 112, height: 32)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 11)
-
             ZStack {
                 Circle()
                     .fill(Color.white.opacity(0.18))
@@ -75,6 +70,7 @@ struct TransferBerhasilView: View {
                         .foregroundStyle(blue)
                 }
             }
+            .padding(.top , 54)
 
             Text("Transfer Berhasil")
                 .font(.system(size: 24, weight: .bold))
