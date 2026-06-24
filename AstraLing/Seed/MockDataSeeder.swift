@@ -156,11 +156,7 @@ final class MockDataSeeder {
                 astraPoints: seed.astraPoints,
                 category: seed.category,
                 description: seed.description,
-                qrPayload: "astraling://pay/\(uid)",
-                location: geo,
-                geohash: Geohash.encode(latitude: seed.lat, longitude: seed.lng),
-                locationUpdatedAt: now,
-                isVisible: true
+                qrPayload: "astraling://pay/\(uid)"
             )
 
             do {

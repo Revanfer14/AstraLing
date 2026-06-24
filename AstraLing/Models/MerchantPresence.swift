@@ -13,6 +13,7 @@ struct MerchantPresence: Codable {
     var name: String
     var category: String
     var isVisible: Bool
+    var bannerUrl: String?
     var location: GeoPoint?
     var geohash: String?
     var locationUpdatedAt: Timestamp?

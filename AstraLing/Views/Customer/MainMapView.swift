@@ -39,38 +39,12 @@ struct MainMapView: View {
         return selected
     }
 
-    private var routeKey: String {
-        guard let m = activePingMerchant,
-              let ping = vm.activePing(for: m.id) else { return "" }
-        return "\(m.id)_\(ping.status.rawValue)"
-    }
-
     var body: some View {
         ZStack(alignment: .top) {
             Map(position: $camera) {
                 UserAnnotation()
-                ForEach(vm.merchants) { merchant in
-                    let isActivePing = activePingMerchant?.id == merchant.id
-                    Annotation(merchant.name, coordinate: merchant.coordinate) {
-                        ZStack(alignment: .bottom) {
-                            if isActivePing {
-                                MerchantMapBanner(name: merchant.name, bannerUrl: merchant.bannerUrl)
-                                    .offset(y: -58)
-                                    .allowsHitTesting(false)
-                            }
-                            MerchantMapPin(name: merchant.name, isSelected: selectedMerchant?.id == merchant.id)
-                                .onTapGesture {
-                                    selectedMerchant = merchant
-                                    sheetDetent = .height(360)
-                                    focus(on: merchant)
-                                }
-                        }
-                    }
-                }
-                if vm.routeCoordinates.count >= 2 {
-                    MapPolyline(coordinates: vm.routeCoordinates)
-                        .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
-                }
+                merchantAnnotations
+                routeOverlays
             }
             .ignoresSafeArea()
             .onMapCameraChange(frequency: .onEnd) { context in
@@ -217,15 +191,6 @@ struct MainMapView: View {
                 ))
             }
         }
-        .onChange(of: routeKey) { _, key in
-            if let m = activePingMerchant,
-               let ping = vm.activePing(for: m.id),
-               ping.status == .onTheWay {
-                vm.updateRoute(to: m.coordinate)
-            } else {
-                vm.clearRoute()
-            }
-        }
         .onDisappear { vm.stop() }
     }
 
@@ -233,6 +198,51 @@ struct MainMapView: View {
         guard let center = mapCenter, let user = location.current else { return false }
         return CLLocation(latitude: center.latitude, longitude: center.longitude)
             .distance(from: user) > 250
+    }
+
+    @MapContentBuilder
+    private var merchantAnnotations: some MapContent {
+        ForEach(vm.merchants) { merchant in
+            Annotation("", coordinate: merchant.coordinate) {
+                pinContent(
+                    for: merchant,
+                    isActivePing: activePingMerchant?.id == merchant.id,
+                    isSelected: selectedMerchant?.id == merchant.id
+                )
+            }
+        }
+    }
+
+    @MapContentBuilder
+    private var routeOverlays: some MapContent {
+        ForEach(Array(vm.routes.keys), id: \.self) { uid in
+            if let coords = vm.routes[uid], coords.count >= 2 {
+                MapPolyline(coordinates: coords)
+                    .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func pinContent(for merchant: NearbyMerchant, isActivePing: Bool, isSelected: Bool) -> some View {
+        ZStack(alignment: .bottom) {
+            if isActivePing {
+                MerchantMapBanner(name: merchant.name, bannerUrl: merchant.bannerUrl)
+                    .offset(y: -58)
+                    .allowsHitTesting(false)
+            }
+            MerchantMapPin(
+                name: merchant.name,
+                bannerUrl: merchant.bannerUrl,
+                isSelected: isSelected,
+                showName: !isActivePing
+            )
+            .onTapGesture {
+                selectedMerchant = merchant
+                sheetDetent = .height(360)
+                focus(on: merchant)
+            }
+        }
     }
 
     private func recenterOnUser() {
@@ -321,6 +331,7 @@ struct MainMapView: View {
                     merchant: selected,
                     status: active.status,
                     isFavorite: vm.isFavorite(selected.id),
+                    isMinimized: sheetDetent == .height(minSheetHeight),
                     onBack: {
                         selectedMerchant = nil
                         sheetDetent = .height(360)
@@ -352,15 +363,26 @@ struct MainMapView: View {
 
     private var listContent: some View {
         VStack(spacing: 16) {
-            Text("Jajanan di sekitarmu")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.appTextPrimary)
-                .padding(.top, 15)
+            VStack(spacing: 4) {
+                Text("Jajanan di sekitarmu")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.appTextPrimary)
+                    .padding(.top, 15)
+
+                if !vm.activePings.isEmpty {
+                    Text("Kamu punya \(vm.activePings.count) Ping aktif")
+                        .font(.system(size: 14))
+                        .foregroundColor(.appTextTertiary)
+                }
+            }
 
             if sheetDetent != .height(minSheetHeight) {
+                let tabs: [String] = vm.activePings.isEmpty
+                    ? ["Semua", "Favorit"]
+                    : ["Ping Aktif", "Semua", "Favorit"]
+
                 HStack(spacing: 0) {
-                    let tabs = ["Semua", "Favorit"]
-                    ForEach(0..<2, id: \.self) { index in
+                    ForEach(tabs.indices, id: \.self) { index in
                         Text(tabs[index])
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(selectedTab == index ? .white : .gray)
@@ -386,28 +408,71 @@ struct MainMapView: View {
                 .padding(4)
                 .background(Color.gray.opacity(0.15))
                 .cornerRadius(20)
+                .onChange(of: vm.activePings.count) { _, _ in
+                    let newTabs: [String] = vm.activePings.isEmpty
+                        ? ["Semua", "Favorit"]
+                        : ["Ping Aktif", "Semua", "Favorit"]
+                    if selectedTab >= newTabs.count {
+                        selectedTab = 0
+                    }
+                    if !vm.activePings.isEmpty && selectedTab == 0 {
+                        selectedTab = 0
+                    }
+                }
 
-                let displayed = selectedTab == 0 ? vm.merchants : vm.merchants.filter(\.isFavorite)
+                let activeLabel = tabs[selectedTab]
 
-                if displayed.isEmpty {
-                    Spacer()
-                    Text(selectedTab == 1 ? "Belum ada pedagang favorit" : "Belum ada pedagang di sekitarmu")
-                        .font(.system(size: 14))
-                        .foregroundColor(.appTextTertiary)
-                    Spacer()
-                } else {
-                    ScrollView(showsIndicators: false) {
-                        LazyVStack(spacing: 12) {
-                            ForEach(displayed) { merchant in
-                                NearbyMerchantCard(merchant: merchant)
-                                    .onTapGesture {
-                                        selectedMerchant = merchant
-                                        sheetDetent = .height(360)
-                                        focus(on: merchant)
-                                    }
+                if activeLabel == "Ping Aktif" {
+                    let pingCards = vm.activePings.compactMap { ping -> (ActivePing, NearbyMerchant)? in
+                        guard let merchant = vm.pingedMerchant(for: ping) else { return nil }
+                        return (ping, merchant)
+                    }
+                    if pingCards.isEmpty {
+                        Spacer()
+                        Text("Belum ada ping aktif")
+                            .font(.system(size: 14))
+                            .foregroundColor(.appTextTertiary)
+                        Spacer()
+                    } else {
+                        ScrollView(showsIndicators: false) {
+                            LazyVStack(spacing: 12) {
+                                ForEach(pingCards, id: \.0.id) { ping, merchant in
+                                    ActivePingCard(merchant: merchant, status: ping.status)
+                                        .onTapGesture {
+                                            selectedMerchant = merchant
+                                            sheetDetent = .height(360)
+                                            focus(on: merchant)
+                                        }
+                                }
                             }
+                            .padding(.bottom, 32)
                         }
-                        .padding(.bottom, 32)
+                    }
+                } else {
+                    let displayed = activeLabel == "Favorit"
+                        ? vm.merchants.filter(\.isFavorite)
+                        : vm.merchants
+
+                    if displayed.isEmpty {
+                        Spacer()
+                        Text(activeLabel == "Favorit" ? "Belum ada pedagang favorit" : "Belum ada pedagang di sekitarmu")
+                            .font(.system(size: 14))
+                            .foregroundColor(.appTextTertiary)
+                        Spacer()
+                    } else {
+                        ScrollView(showsIndicators: false) {
+                            LazyVStack(spacing: 12) {
+                                ForEach(displayed) { merchant in
+                                    NearbyMerchantCard(merchant: merchant)
+                                        .onTapGesture {
+                                            selectedMerchant = merchant
+                                            sheetDetent = .height(360)
+                                            focus(on: merchant)
+                                        }
+                                }
+                            }
+                            .padding(.bottom, 32)
+                        }
                     }
                 }
             }

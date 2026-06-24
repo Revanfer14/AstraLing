@@ -173,23 +173,42 @@ struct Customer: Identifiable, Codable {
     var createdAt: Date
 }
 
-// merchants/{uid}
+// merchants/{uid} — static profile only; fast-changing live data lives in presence/live
 struct Merchant: Identifiable, Codable {
     @DocumentID var id: String?         // == Auth uid
     var name: String
     var email: String
     var balance: Int
+    var astraPoints: Int
     var category: String                // "bakso", "martabak", …
     var description: String?
     var bannerUrl: String?              // Cloud Storage URL
     var qrPayload: String               // e.g. "astraling://pay/{uid}" → encode into QR
-    var location: GeoPoint              // current position (meaningful while isVisible)
-    var geohash: String
-    var locationUpdatedAt: Date
-    var isVisible: Bool                 // ⭐ Keliling Mode ON/OFF — drives map visibility
     var createdAt: Date
 }
 ```
+
+### Presence (single live sub-document per merchant)
+
+Holds fast-changing live data so GPS ticks don't trigger listeners on the full profile.
+Customer map reads via `collectionGroup("presence")`, filtered `isVisible == true` client-side.
+`name` and `category` are **denormalized** from the profile so the map needs only one query.
+
+```swift
+// merchants/{uid}/presence/live  (doc id always "live")
+struct MerchantPresence: Codable {
+    @DocumentID var id: String?
+    var merchantUid: String             // identifies the owner in a collectionGroup result
+    var name: String                    // denormalized from merchants/{uid}.name
+    var category: String                // denormalized from merchants/{uid}.category
+    var isVisible: Bool                 // ⭐ Keliling Mode ON/OFF — drives map visibility
+    var location: GeoPoint?             // current position, updated each GPS tick
+    var geohash: String?                // for radius queries
+    var locationUpdatedAt: Date?
+}
+```
+
+When a merchant saves their profile (`name` change), also mirror `name` into `presence/live`.
 
 ### Menu (subcollection of a merchant)
 
@@ -201,6 +220,7 @@ struct MenuItem: Identifiable, Codable {
     var price: Int
     var status: MenuStatus              // .tersedia | .habis
     var photoUrl: String?
+    var category: String?               // e.g. "Makanan", "Minuman" — for grouping
     var order: Int                      // display order
 }
 ```
@@ -285,19 +305,15 @@ enum MenuStatus: String, Codable { case tersedia, habis }
 
 ### Relationship cheat-sheet
 - `users/{uid}` ── same uid ── `customers/{uid}` *or* `merchants/{uid}`
-- `merchants/{uid}` 1:N `menu` · `chats/{chatId}` 1:N `messages`
+- `merchants/{uid}` 1:N `menu` · 1:1 `presence/live` · `chats/{chatId}` 1:N `messages`
 - `pings.customerUid`,`transactions.customerUid`,`chats.customerUid` → `customers`
 - `pings.merchantUid`,`transactions.merchantUid`,`chats.merchantUid`,`customers.favorites[]` → `merchants`
 - `chats.pingId`,`transactions.pingId` → `pings`
 
-### ⚠️ Schema notes to resolve
-- **AstraPoints:** the deck MVP lists "AstraPoints simulation", and `Seed/MockDataSeeder`
-  currently writes an `astraPoints` field, **but the schema above has no points field.**
-  Decide one: add `astraPoints: Int` to `customers`/`merchants`, or keep AstraPoints as
-  a client-side mock. Recommended: add the field so loyalty persists across devices.
-- **Seeder drift:** the seeder doesn't yet set `bannerUrl`, `createdAt`, `MenuItem.status`,
-  `MenuItem.photoUrl`, or `Customer.photoUrl`. Add them when you touch the seeder so seeded
-  docs match these models.
+### ⚠️ Schema notes
+- **Relationship update:** `merchants/{uid}` 1:N `menu` · 1:1 `presence/live` · `chats/{chatId}` 1:N `messages`
+- **Seeder drift:** the seeder doesn't yet set `bannerUrl`, `createdAt`, `MenuItem.photoUrl`, or `Customer.photoUrl`. Add them when you touch the seeder so seeded docs match these models.
+- **MenuItem.category** is on the model and seeded, but not yet exposed in the Tambah/Kelola Menu UI — merchant-set category stays a future enhancement.
 
 ## 0.7 Payment is FULLY MOCKED (intentional and correct)
 
@@ -450,28 +466,27 @@ Home is `Views/Customer/CustomerHomeView.swift` (a `TabView`).
 Merchant pin → `Components/Customer/MerchantPin.swift`.
 
 ### 1. Live Map
-Snapshot listener on `merchants where isVisible == true`; refine to ≤ ~1 km in the VM
-(geohash bounds for scale, client-side distance for the demo).
+Snapshot listener on `collectionGroup("presence")`, filtered `isVisible == true`
+client-side (avoids a composite index). Build `NearbyMerchant` pins from presence docs;
+compute distance via `CLLocation.distance(from:)`. Geohash bounds available for scale.
 
 ```swift
-@MainActor final class LiveMapViewModel: ObservableObject {
-    @Published var merchants: [Merchant] = []
+@MainActor final class MainMapViewModel: ObservableObject {
+    @Published var merchants: [NearbyMerchant] = []
     private var listener: ListenerRegistration?
-    func start() {
-        location.requestWhenInUse()
-        listener = firestore.listenVisibleMerchants { [weak self] merchants in
-            guard let self, let me = self.location.current else { return }
-            self.merchants = merchants.filter {
-                me.distance(from: CLLocation(latitude: $0.location.latitude,
-                                             longitude: $0.location.longitude)) <= 1000
+    private func attachListener() {
+        listener = db.collectionGroup("presence")
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self, let docs = snapshot?.documents else { return }
+                self.rawPresence = docs.compactMap { try? $0.data(as: MerchantPresence.self) }
+                    .filter { $0.isVisible }
+                self.rebuild()
             }
-        }
     }
-    func stop() { listener?.remove(); listener = nil }
 }
 ```
-View (iOS 17 `Map`): `UserAnnotation()` + a `MerchantPin` per merchant (category SF
-Symbol + verified/`isVisible` cue); tap → Merchant Detail. Optionally draw a radius
+View (iOS 17 `Map`): `UserAnnotation()` + a `MerchantMapPin` per `NearbyMerchant`
+(category SF Symbol + visibility cue); tap → Merchant Detail. Optionally draw a radius
 circle to signal "local radar."
 
 ### 2. Merchant Detail
@@ -519,7 +534,7 @@ either add `customers.astraPoints` or keep this purely client-side for now.
 
 ## Customer flow
 ```
-Sign in (role=customer) → Live Map (listen merchants.isVisible==true)
+Sign in (role=customer) → Live Map (collectionGroup("presence"), filter isVisible==true)
  → tap pin → Merchant Detail (menu) → pick items → Ping (WRITE pings .active)
  → merchant marks .onTheWay → Chat to coordinate → meet offline
  → Pay (WRITE transactions) → ping .completed
@@ -562,30 +577,29 @@ Home is `Views/Merchant/MerchantHomeView.swift` (a `TabView`).
 | Profile | `MerchantProfileView` | `MerchantProfileViewModel` |
 
 ### 1. Keliling Mode (the core toggle)
-ON = set `merchants/{uid}.isVisible = true` + push live `location`/`geohash`/
-`locationUpdatedAt`; OFF = `isVisible = false` and vanish. Presence + privacy switch.
+ON = write `isVisible = true` to `merchants/{uid}/presence/live` + push live
+`location`/`geohash`/`locationUpdatedAt`; OFF = `isVisible = false` and vanish.
+Presence + privacy switch. The `merchants/{uid}` profile doc is **not** touched here.
 
 ```swift
-@MainActor final class KelilingModeViewModel: ObservableObject {
-    @Published var isVisible = false
-    func toggle(_ on: Bool) async {
-        isVisible = on
-        if on {
-            location.requestWhenInUse(); location.startUpdating()
-            location.onUpdate = { [weak self] loc in
-                guard let self else { return }
-                Task { try? await self.firestore.updateMerchantLocation(
-                    self.uid, loc.coordinate,
-                    geohash: Geohash.encode(latitude: loc.coordinate.latitude,
-                                            longitude: loc.coordinate.longitude)) }
-            }
-        } else { location.stopUpdating(); location.onUpdate = nil }
-        try? await firestore.setMerchantVisible(uid, isVisible: on)
-    }
+func setVisible(_ isVisible: Bool) async {
+    var data: [String: Any] = [
+        "merchantUid": uid, "isVisible": isVisible,
+        "locationUpdatedAt": FieldValue.serverTimestamp()
+    ]
+    if let merchant { data["name"] = merchant.name; data["category"] = merchant.category }
+    try? await presenceRef?.setData(data, merge: true)
+}
+
+func updateLocation(_ coordinate: CLLocationCoordinate2D) async {
+    try? await presenceRef?.setData([
+        "location": GeoPoint(latitude: coordinate.latitude, longitude: coordinate.longitude),
+        "geohash": Geohash.encode(latitude: coordinate.latitude, longitude: coordinate.longitude),
+        "locationUpdatedAt": FieldValue.serverTimestamp()
+    ], merge: true)
 }
 ```
-Throttle location pushes (meaningful-distance change). Make the toggle unmissable and
-state obvious (big "Sedang Berjualan" banner) so #3 is instant.
+Make the toggle unmissable and state obvious (big "Sedang Berjualan" banner) so #3 is instant.
 
 ### 2. Ping Inbox
 Listener on `pings where merchantUid == auth.uid`, newest first, filtered to
