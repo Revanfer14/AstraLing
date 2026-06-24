@@ -58,7 +58,7 @@ struct KelilingModeView: View {
     ))
 
     private var merchantCoordinate: CLLocationCoordinate2D {
-        guard let loc = merchantVM.merchant?.location else {
+        guard let loc = merchantVM.presence?.location else {
             return CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
         }
         return CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
@@ -124,16 +124,16 @@ struct KelilingModeView: View {
             merchantVM.stopListening()
             location.stopUpdating()
         }
-        .onChange(of: merchantVM.merchant?.uid) { _, uid in
-            guard uid != nil, !isVisibleSynced, let merchant = merchantVM.merchant else { return }
+        .onChange(of: merchantVM.presence?.merchantUid) { _, uid in
+            guard uid != nil, !isVisibleSynced, let presence = merchantVM.presence else { return }
             isVisibleSynced = true
-            isVisible = merchant.isVisible
-            let coord = CLLocationCoordinate2D(
-                latitude: merchant.location.latitude,
-                longitude: merchant.location.longitude
+            isVisible = presence.isVisible
+            guard let loc = presence.location else { return }
+            let coord = CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
+            let region = MKCoordinateRegion(
+                center: coord,
+                span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
             )
-            let span = MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
-            let region = MKCoordinateRegion(center: coord, span: span)
             mapPosition = .region(region)
             currentRegion = region
         }
@@ -247,15 +247,15 @@ struct KelilingModeView: View {
                 }
             } else {
                 if isVisible {
-                    MapCircle(center: merchantCoordinate, radius: 500)
+                    MapCircle(center: merchantCoordinate, radius: 200)
                         .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04))
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.4), lineWidth: 2)
 
-                    MapCircle(center: merchantCoordinate, radius: 900)
+                    MapCircle(center: merchantCoordinate, radius: 400)
                         .foregroundStyle(.clear)
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.24), lineWidth: 2)
 
-                    MapCircle(center: merchantCoordinate, radius: 1300)
+                    MapCircle(center: merchantCoordinate, radius: 600)
                         .foregroundStyle(.clear)
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.12), lineWidth: 2)
 

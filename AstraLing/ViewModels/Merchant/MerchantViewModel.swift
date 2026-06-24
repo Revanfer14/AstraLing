@@ -14,6 +14,7 @@ import FirebaseFirestore
 @MainActor
 final class MerchantViewModel: ObservableObject {
     @Published var merchant: Merchant? = nil
+    @Published var presence: MerchantPresence? = nil
     @Published var menuItems: [MenuItem] = []
     @Published var activePings: [Ping] = []
     @Published var isSaving = false
@@ -21,6 +22,7 @@ final class MerchantViewModel: ObservableObject {
 
     private let db = Firestore.firestore()
     private var profileListener: ListenerRegistration?
+    private var presenceListener: ListenerRegistration?
     private var menuListener: ListenerRegistration?
     private var pingsListener: ListenerRegistration?
 
@@ -34,6 +36,14 @@ final class MerchantViewModel: ObservableObject {
                 guard let self else { return }
                 if let error { self.errorMessage = error.localizedDescription; return }
                 self.merchant = try? snapshot?.data(as: Merchant.self)
+            }
+
+        presenceListener = db.collection("merchants").document(uid)
+            .collection("presence").document("live")
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self else { return }
+                if let error { self.errorMessage = error.localizedDescription; return }
+                self.presence = try? snapshot?.data(as: MerchantPresence.self)
             }
 
         menuListener = db.collection("merchants").document(uid)
@@ -60,27 +70,42 @@ final class MerchantViewModel: ObservableObject {
 
     func stopListening() {
         profileListener?.remove()
+        presenceListener?.remove()
         menuListener?.remove()
         pingsListener?.remove()
         profileListener = nil
+        presenceListener = nil
         menuListener = nil
         pingsListener = nil
     }
 
+    private var presenceRef: DocumentReference? {
+        guard let uid else { return nil }
+        return db.collection("merchants").document(uid).collection("presence").document("live")
+    }
+
     func setVisible(_ isVisible: Bool) async {
         guard let uid else { return }
-        try? await db.collection("merchants").document(uid).updateData(["isVisible": isVisible])
+        var data: [String: Any] = [
+            "merchantUid": uid,
+            "isVisible": isVisible,
+            "locationUpdatedAt": FieldValue.serverTimestamp()
+        ]
+        if let merchant {
+            data["name"] = merchant.name
+            data["category"] = merchant.category
+        }
+        try? await presenceRef?.setData(data, merge: true)
     }
 
     func updateLocation(_ coordinate: CLLocationCoordinate2D) async {
-        guard let uid else { return }
         let geopoint = GeoPoint(latitude: coordinate.latitude, longitude: coordinate.longitude)
         let geohash = Geohash.encode(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        try? await db.collection("merchants").document(uid).updateData([
+        try? await presenceRef?.setData([
             "location": geopoint,
             "geohash": geohash,
             "locationUpdatedAt": FieldValue.serverTimestamp()
-        ])
+        ], merge: true)
     }
 
     func saveProfile(name: String, description: String, bannerImage: UIImage?) async {
@@ -105,6 +130,7 @@ final class MerchantViewModel: ObservableObject {
 
         do {
             try await db.collection("merchants").document(uid).updateData(updates)
+            try? await presenceRef?.setData(["name": name], merge: true)
         } catch {
             errorMessage = error.localizedDescription
         }

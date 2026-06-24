@@ -28,7 +28,7 @@ final class MainMapViewModel: ObservableObject {
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
-    private var rawMerchants: [Merchant] = []
+    private var rawPresence: [MerchantPresence] = []
     private var favoriteUids: Set<String> = []
     private var userLocation: CLLocation?
     private var lastWrittenLocation: CLLocation?
@@ -56,18 +56,20 @@ final class MainMapViewModel: ObservableObject {
         let lat = center.coordinate.latitude
         let lng = center.coordinate.longitude
         let latRad = lat * .pi / 180
-        for merchant in rawMerchants {
-            guard let uid = merchant.uid else { continue }
+        for presence in rawPresence {
+            let uid = presence.merchantUid
             let distance = Double.random(in: 300...600)
             let bearing = Double.random(in: 0 ..< (2 * .pi))
             let newLat = lat + (distance * cos(bearing)) / 111_320
             let newLng = lng + (distance * sin(bearing)) / (111_320 * cos(latRad))
             Task {
-                try? await db.collection("merchants").document(uid).updateData([
-                    "location": GeoPoint(latitude: newLat, longitude: newLng),
-                    "geohash": Geohash.encode(latitude: newLat, longitude: newLng),
-                    "locationUpdatedAt": Timestamp(date: Date())
-                ])
+                try? await db.collection("merchants").document(uid)
+                    .collection("presence").document("live")
+                    .setData([
+                        "location": GeoPoint(latitude: newLat, longitude: newLng),
+                        "geohash": Geohash.encode(latitude: newLat, longitude: newLng),
+                        "locationUpdatedAt": Timestamp(date: Date())
+                    ], merge: true)
             }
         }
     }
@@ -107,33 +109,30 @@ final class MainMapViewModel: ObservableObject {
     }
 
     private func attachListener() {
-        listener = db.collection("merchants")
-            .whereField("isVisible", isEqualTo: true)
+        listener = db.collectionGroup("presence")
             .addSnapshotListener { [weak self] snapshot, _ in
                 guard let self, let docs = snapshot?.documents else { return }
-                self.rawMerchants = docs.compactMap { try? $0.data(as: Merchant.self) }
+                self.rawPresence = docs.compactMap { try? $0.data(as: MerchantPresence.self) }
+                    .filter { $0.isVisible }
                 self.rebuild()
             }
     }
 
     private func rebuild() {
-        merchants = rawMerchants.compactMap { merchant in
-            guard let uid = merchant.uid else { return nil }
-            let coord = CLLocationCoordinate2D(
-                latitude: merchant.location.latitude,
-                longitude: merchant.location.longitude
-            )
+        merchants = rawPresence.compactMap { presence in
+            guard let loc = presence.location else { return nil }
+            let coord = CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
             let merchantLoc = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
             let distMeters: Double? = userLocation.map { $0.distance(from: merchantLoc) }
             let distLabel = distLabel(for: distMeters)
             let walkLabel = walkLabel(for: distMeters)
             return NearbyMerchant(
-                id: uid,
-                name: merchant.name,
-                category: merchant.category,
+                id: presence.merchantUid,
+                name: presence.name,
+                category: presence.category,
                 coordinate: coord,
                 distanceMeters: distMeters,
-                isFavorite: favoriteUids.contains(uid),
+                isFavorite: favoriteUids.contains(presence.merchantUid),
                 distanceLabel: distLabel,
                 walkLabel: walkLabel
             )

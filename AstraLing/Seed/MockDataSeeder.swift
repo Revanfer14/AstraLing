@@ -160,6 +160,19 @@ final class MockDataSeeder {
                 try db.collection("users").document(uid).setData(from: user)
                 try db.collection("merchants").document(uid).setData(from: merchant)
 
+                let presence: [String: Any] = [
+                    "merchantUid": uid,
+                    "name": seed.name,
+                    "category": seed.category,
+                    "isVisible": true,
+                    "location": geo,
+                    "geohash": Geohash.encode(latitude: seed.lat, longitude: seed.lng),
+                    "locationUpdatedAt": now
+                ]
+                try await db.collection("merchants").document(uid)
+                    .collection("presence").document("live")
+                    .setData(presence)
+
                 let menuRef = db.collection("merchants").document(uid).collection("menu")
                 for (order, item) in seed.menu.enumerated() {
                     let menuItem = MenuItem(name: item.name, price: item.price, order: order)
