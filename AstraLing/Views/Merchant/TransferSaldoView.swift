@@ -82,7 +82,7 @@ struct TransferSaldoView: View {
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Transfer Saldo")
-                    .font(.system(size: 18))
+                    .font(.system(size: 18).bold())
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Pindahkan saldo usaha ke AstraPay-mu")
                     .font(.system(size: 12))

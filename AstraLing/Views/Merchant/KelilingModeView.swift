@@ -538,8 +538,8 @@ struct KelilingModeView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.92))
-                .shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 8)
+                .fill(.white)
+//                .shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 8)
         )
         .padding(.horizontal, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)

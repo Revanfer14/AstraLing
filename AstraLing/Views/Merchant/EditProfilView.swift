@@ -113,7 +113,7 @@ struct EditProfilView: View {
                 }
             }
             Text("Edit Profil")
-                .font(.system(size: 18))
+                .font(.system(size: 18).bold())
                 .foregroundStyle(darkText)
         }
     }

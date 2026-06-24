@@ -89,7 +89,7 @@ struct QRSayaView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("QR Saya")
-                    .font(.system(size: 18))
+                    .font(.system(size: 18).bold())
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Tunjukkan ke customer untuk membayar")
                     .font(.system(size: 12))
