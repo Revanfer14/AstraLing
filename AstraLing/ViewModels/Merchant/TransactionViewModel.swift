@@ -105,10 +105,13 @@ final class TransactionViewModel: ObservableObject {
                 } else {
                     label = fmt.string(from: date).capitalized
                 }
-                let dayTotal = items
+                let sorted = items.sorted {
+                    ($0.createdAt?.dateValue() ?? .distantPast) > ($1.createdAt?.dateValue() ?? .distantPast)
+                }
+                let dayTotal = sorted
                     .filter { $0.type == .payment && $0.status == .success }
                     .reduce(0) { $0 + $1.amount }
-                return (label: label, total: dayTotal, items: items)
+                return (label: label, total: dayTotal, items: sorted)
             }
     }
 

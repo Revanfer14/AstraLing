@@ -172,7 +172,7 @@ struct MerchantDashboardView: View {
             }
 
             HStack(spacing: 10) {
-                NavigationLink(destination: TransferSaldoView().navigationBarBackButtonHidden(true)) {
+                NavigationLink(destination: TransferSaldoView().navigationBarBackButtonHidden(true).environmentObject(merchantVM)) {
                     quickActionItem(icon: "arrow.up", label: "Transfer Saldo")
                 }
                 NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true).environmentObject(merchantVM)) {

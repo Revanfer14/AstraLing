@@ -85,7 +85,7 @@ final class MerchantViewModel: ObservableObject {
                     let docId = change.document.documentID
                     guard !self.knownTransactionIds.contains(docId) else { continue }
                     self.knownTransactionIds.insert(docId)
-                    if let txn = try? change.document.data(as: Transaction.self), txn.status == .success {
+                    if let txn = try? change.document.data(as: Transaction.self), txn.status == .success, txn.type == .payment {
                         self.newTransaction = txn
                         NotificationService.shared.postTransactionArrived(
                             amount: txn.amount.rupiah,
@@ -210,6 +210,49 @@ final class MerchantViewModel: ObservableObject {
             try await ref.setData(data)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    func transferBalance(amount: Int) async -> (displayId: String, date: Date)? {
+        guard let uid else { return nil }
+        let dateStr: String = {
+            let f = DateFormatter()
+            f.dateFormat = "yyMMdd"
+            return f.string(from: Date())
+        }()
+        let displayId = "#TR\(dateStr)-\(String(format: "%04d", Int.random(in: 0...9999)))"
+        let now = Date()
+        let merchantRef = db.collection("merchants").document(uid)
+        let txnRef = db.collection("transactions").document()
+        do {
+            _ = try await db.runTransaction { txn, errorPointer in
+                let snap: DocumentSnapshot
+                do { snap = try txn.getDocument(merchantRef) }
+                catch let e as NSError { errorPointer?.pointee = e; return nil }
+                let cur = snap.data()?["balance"] as? Int ?? 0
+                guard cur >= amount else {
+                    errorPointer?.pointee = NSError(
+                        domain: "TransferError", code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "Saldo tidak cukup untuk transfer ini."]
+                    )
+                    return nil
+                }
+                txn.updateData(["balance": cur - amount], forDocument: merchantRef)
+                txn.setData([
+                    "type":        "transfer",
+                    "displayId":   displayId,
+                    "merchantUid": uid,
+                    "amount":      amount,
+                    "method":      "Transfer AstraPay",
+                    "status":      "success",
+                    "createdAt":   FieldValue.serverTimestamp()
+                ], forDocument: txnRef)
+                return nil
+            }
+            return (displayId: displayId, date: now)
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
         }
     }
 

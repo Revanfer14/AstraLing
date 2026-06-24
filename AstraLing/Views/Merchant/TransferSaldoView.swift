@@ -9,17 +9,25 @@ import SwiftUI
 
 struct TransferSaldoView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var merchantVM: MerchantViewModel
 
     @State private var amountText: String = ""
     @State private var selectedChip: String? = nil
+    @State private var isSending = false
+    @State private var showSuccess = false
+    @State private var showError = false
+    @State private var successResult: (displayId: String, date: Date)? = nil
     @FocusState private var amountFocused: Bool
 
-    private let availableBalance = 1_245_000
-    private let chips: [(label: String, value: Int)] = [
-        ("Rp 100rb", 100_000),
-        ("Rp 500rb", 500_000),
-        ("Semua",  1_245_000),
-    ]
+    private var availableBalance: Int { merchantVM.merchant?.balance ?? 0 }
+
+    private var chips: [(label: String, value: Int)] {
+        [
+            ("Rp 100rb",  100_000),
+            ("Rp 500rb",  500_000),
+            ("Semua",     availableBalance),
+        ]
+    }
 
     private var currentAmount: Int {
         Int(amountText.filter { $0.isNumber }) ?? 0
@@ -27,6 +35,10 @@ struct TransferSaldoView: View {
 
     private var displayAmount: String {
         currentAmount == 0 ? "Rp 0" : formatRupiah(currentAmount)
+    }
+
+    private var canTransfer: Bool {
+        currentAmount > 0 && currentAmount <= availableBalance && !isSending
     }
 
     private func formatRupiah(_ value: Int) -> String {
@@ -65,6 +77,21 @@ struct TransferSaldoView: View {
         .background(Color.white.ignoresSafeArea())
         .navigationBarHidden(true)
         .onTapGesture { amountFocused = false }
+        .fullScreenCover(isPresented: $showSuccess) {
+            if let result = successResult {
+                TransferBerhasilView(
+                    amount: currentAmount,
+                    displayId: result.displayId,
+                    merchantName: merchantVM.merchant?.name ?? "Merchant",
+                    date: result.date
+                )
+            }
+        }
+        .alert("Transfer Gagal", isPresented: $showError) {
+            Button("OK") {}
+        } message: {
+            Text(merchantVM.errorMessage ?? "Terjadi kesalahan. Silakan coba lagi.")
+        }
     }
 
     private var headerSection: some View {
@@ -117,14 +144,10 @@ struct TransferSaldoView: View {
                     .onChange(of: amountText) { _, newValue in
                         let digits = newValue.filter { $0.isNumber }
                         let limited = String(digits.prefix(10))
-                        if amountText != limited {
-                            amountText = limited
-                        }
-                        if let selected = selectedChip, let chip = chips.first(where: { $0.label == selected }) {
-                            if limited != String(chip.value) {
-                                selectedChip = nil
-                            }
-                        } else if selectedChip != nil {
+                        if amountText != limited { amountText = limited }
+                        if let sel = selectedChip,
+                           let chip = chips.first(where: { $0.label == sel }),
+                           limited != String(chip.value) {
                             selectedChip = nil
                         }
                     }
@@ -156,18 +179,12 @@ struct TransferSaldoView: View {
                 } label: {
                     Text(chip.label)
                         .font(.system(size: 13))
-                        .foregroundStyle(
-                            Color.appPrimary
-                        )
+                        .foregroundStyle(Color.appPrimary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
                         .background(
                             RoundedRectangle(cornerRadius: 13)
-                                .fill(
-                                    selectedChip == chip.label
-                                    ? Color.appSurfaceBlue
-                                        : Color.white
-                                )
+                                .fill(selectedChip == chip.label ? Color.appSurfaceBlue : Color.white)
                                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 7, x: 0, y: 4)
                         )
                 }
@@ -197,7 +214,7 @@ struct TransferSaldoView: View {
                 Text("AstraPay Saya")
                     .font(.system(size: 14.5))
                     .foregroundStyle(Color.appTextPrimary)
-                Text("Adi Saputra · 0812****34")
+                Text(merchantVM.merchant?.name ?? "Merchant")
                     .font(.system(size: 12))
                     .foregroundStyle(Color.appTextTertiary)
             }
@@ -207,10 +224,7 @@ struct TransferSaldoView: View {
                 .foregroundStyle(Color.appPrimary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 7)
-                        .fill(Color.appSurfaceBlue)
-                )
+                .background(RoundedRectangle(cornerRadius: 7).fill(Color.appSurfaceBlue))
         }
         .padding(.horizontal, 15)
         .padding(.vertical, 16)
@@ -242,9 +256,7 @@ struct TransferSaldoView: View {
                     .foregroundStyle(Color.appSuccess)
             }
             .padding(.bottom, 2)
-            Rectangle()
-                .fill(Color.appDivider)
-                .frame(height: 1)
+            Rectangle().fill(Color.appDivider).frame(height: 1)
             HStack {
                 Text("Masuk ke AstraPay")
                     .font(.system(size: 15))
@@ -275,29 +287,48 @@ struct TransferSaldoView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 15)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 13)
-                    .fill(Color.appSuccessBg)
-            )
+            .background(RoundedRectangle(cornerRadius: 13).fill(Color.appSuccessBg))
     }
 
     private var transferButton: some View {
-        Button {} label: {
-            Text("Transfer ke AstraPay")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Color.appBackground)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.appPrimary)
-                )
+        Button {
+            amountFocused = false
+            isSending = true
+            Task {
+                let result = await merchantVM.transferBalance(amount: currentAmount)
+                isSending = false
+                if let result {
+                    successResult = result
+                    showSuccess = true
+                } else {
+                    showError = true
+                }
+            }
+        } label: {
+            Group {
+                if isSending {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Text("Transfer ke AstraPay")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.appBackground)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(canTransfer ? Color.appPrimary : Color.appPrimary.opacity(0.4))
+            )
         }
+        .disabled(!canTransfer)
     }
 }
 
 #Preview {
     NavigationStack {
         TransferSaldoView()
+            .environmentObject(MerchantViewModel())
     }
 }
