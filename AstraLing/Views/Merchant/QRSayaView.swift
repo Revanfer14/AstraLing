@@ -35,6 +35,37 @@ struct QRSayaView: View {
 
     private var qrImage: UIImage { generateQRCode(qrPayload) }
 
+    private var brandedQRImage: UIImage {
+        let qr = qrImage
+        let name = merchantName
+        let nmidText = "NMID : \(nmid)"
+        let padding: CGFloat = 40
+        let nameFont = UIFont.boldSystemFont(ofSize: 28)
+        let nmidFont = UIFont.systemFont(ofSize: 14)
+        let nameAttr: [NSAttributedString.Key: Any] = [.font: nameFont, .foregroundColor: UIColor.black]
+        let nmidAttr: [NSAttributedString.Key: Any] = [.font: nmidFont, .foregroundColor: UIColor.gray]
+        let nameSize = (name as NSString).size(withAttributes: nameAttr)
+        let nmidSize = (nmidText as NSString).size(withAttributes: nmidAttr)
+        let qrSide = qr.size.width
+        let totalWidth = qrSide + padding * 2
+        let totalHeight = padding + nameSize.height + 8 + nmidSize.height + 24 + qrSide + padding
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: totalWidth, height: totalHeight))
+        return renderer.image { _ in
+            UIColor.white.setFill()
+            UIRectFill(CGRect(origin: .zero, size: CGSize(width: totalWidth, height: totalHeight)))
+            var y = padding
+            (name as NSString).draw(
+                in: CGRect(x: (totalWidth - nameSize.width) / 2, y: y, width: nameSize.width, height: nameSize.height),
+                withAttributes: nameAttr)
+            y += nameSize.height + 8
+            (nmidText as NSString).draw(
+                in: CGRect(x: (totalWidth - nmidSize.width) / 2, y: y, width: nmidSize.width, height: nmidSize.height),
+                withAttributes: nmidAttr)
+            y += nmidSize.height + 24
+            qr.draw(in: CGRect(x: padding, y: y, width: qrSide, height: qrSide))
+        }
+    }
+
     private var merchantName: String {
         merchantVM.merchant?.name ?? "Merchant"
     }
@@ -69,7 +100,7 @@ struct QRSayaView: View {
         .background(Color.white.ignoresSafeArea())
         .navigationBarHidden(true)
         .sheet(isPresented: $showShareSheet) {
-            QRShareSheet(image: qrImage)
+            QRShareSheet(image: brandedQRImage)
         }
     }
 
@@ -140,7 +171,7 @@ struct QRSayaView: View {
     private var actionRow: some View {
         HStack(spacing: 16) {
             Button {
-                UIImageWriteToSavedPhotosAlbum(qrImage, nil, nil, nil)
+                UIImageWriteToSavedPhotosAlbum(brandedQRImage, nil, nil, nil)
                 withAnimation { savedToPhotos = true }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                     withAnimation { savedToPhotos = false }
