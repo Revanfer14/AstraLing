@@ -11,6 +11,7 @@ struct PingChatSheet: View {
     let merchant: NearbyMerchant
     let status: PingStatus
     let isFavorite: Bool
+    var isMinimized: Bool = false
     let onBack: () -> Void
     let onToggleFavorite: () -> Void
     let onRequestCancel: () -> Void
@@ -21,13 +22,53 @@ struct PingChatSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             headerSection
-            statusSection
-            chatArea
-            inputArea
+            if !isMinimized {
+                statusSection
+                if status == .onTheWay {
+                    chatArea
+                    inputArea
+                } else {
+                    waitingPlaceholder
+                }
+            }
         }
-        .onAppear { vm.start(merchantUid: merchant.id, merchantName: merchant.name) }
-        .onChange(of: merchant.id) { _, newId in vm.start(merchantUid: newId, merchantName: merchant.name) }
+        .onAppear {
+            if status == .onTheWay {
+                vm.start(merchantUid: merchant.id, merchantName: merchant.name)
+            }
+        }
+        .onChange(of: merchant.id) { _, newId in
+            if status == .onTheWay {
+                vm.start(merchantUid: newId, merchantName: merchant.name)
+            } else {
+                vm.stop()
+            }
+        }
+        .onChange(of: status) { _, newStatus in
+            if newStatus == .onTheWay {
+                vm.start(merchantUid: merchant.id, merchantName: merchant.name)
+            } else {
+                vm.stop()
+            }
+        }
         .onDisappear { vm.stop() }
+    }
+
+    private var waitingPlaceholder: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "hourglass")
+                .font(.system(size: 36))
+                .foregroundColor(.appPrimary.opacity(0.4))
+            Text("Chat akan terbuka setelah pedagang mengonfirmasi pingmu")
+                .font(.system(size: 14))
+                .foregroundColor(.appTextTertiary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appSurfaceBlue)
     }
 
     private var headerSection: some View {

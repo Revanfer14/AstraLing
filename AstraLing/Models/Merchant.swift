@@ -1,19 +1,15 @@
 import FirebaseFirestore
 
-/// `merchants/{uid}` — merchant profile, balance, location, and visibility flag.
+/// `merchants/{uid}` — static merchant profile. Live data (location, visibility) lives in `presence/live`.
 struct Merchant: Codable {
     @DocumentID var uid: String?
     var name: String
     var email: String
-    var balance: Int                     // rupiah, integer
+    var balance: Int
     var astraPoints: Int
-    var category: String                 // e.g. "bakso", "martabak" — used for map filter
+    var category: String
     var description: String? = nil
-    var bannerUrl: String? = nil         // Cloud Storage download URL
-    var qrPayload: String                // static string encoded in the merchant's QR code
-    var location: GeoPoint
-    var geohash: String
-    var locationUpdatedAt: Timestamp
-    var isVisible: Bool                  // customers only see merchants where isVisible == true
+    var bannerUrl: String? = nil
+    var qrPayload: String
     @ServerTimestamp var createdAt: Timestamp?
 }

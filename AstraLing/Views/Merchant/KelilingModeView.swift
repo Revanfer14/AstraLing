@@ -11,6 +11,7 @@ import FirebaseFirestore
 
 private struct PinItem: Identifiable {
     let id: String
+    let customerUid: String
     let initial: String
     let name: String
     let distanceLabel: String
@@ -36,6 +37,7 @@ struct KelilingModeView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var merchantVM = MerchantViewModel()
+    @StateObject private var chatVM = MerchantChatViewModel()
 
     @State private var isVisible = false
     @State private var isVisibleSynced = false
@@ -83,6 +85,7 @@ struct KelilingModeView: View {
                 : String(format: "%.1f km", meters / 1000)
             return PinItem(
                 id: ping.id ?? ping.customerUid,
+                customerUid: ping.customerUid,
                 initial: String(ping.customerName.prefix(1)).uppercased(),
                 name: ping.customerName,
                 distanceLabel: label,
@@ -194,6 +197,7 @@ struct KelilingModeView: View {
             set: { if !$0 { showDashboard = false } }
         )) {
             MerchantDashboardView()
+                .environmentObject(merchantVM)
         }
         .fullScreenCover(isPresented: Binding(
             get: { showEditProfile && !isVisible },
@@ -201,11 +205,17 @@ struct KelilingModeView: View {
         )) {
             NavigationStack {
                 EditProfilView()
+                    .environmentObject(merchantVM)
             }
         }
     }
     
     private func setActivePing(_ pin: PinItem?) {
+        if let pin = pin {
+            chatVM.start(customerUid: pin.customerUid)
+        } else {
+            chatVM.stop()
+        }
         withAnimation {
             activePing = pin
             if let pin = pin {
@@ -688,7 +698,12 @@ struct KelilingModeView: View {
 
                 Spacer()
 
-                Button { setActivePing(pin) } label: {
+                Button {
+                    if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
+                        Task { await merchantVM.accept(ping) }
+                    }
+                    setActivePing(pin)
+                } label: {
                     Text("Terima Ping")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.white)
@@ -725,9 +740,11 @@ struct KelilingModeView: View {
                     Text(pin.name)
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(Color.appTextPrimary)
-                    Text("Menunggu kamu · 120 m")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.appSuccess)
+                    if !pin.distanceLabel.isEmpty {
+                        Text("Menunggu kamu · \(pin.distanceLabel)")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.appSuccess)
+                    }
                 }
 
                 Spacer()
@@ -736,35 +753,50 @@ struct KelilingModeView: View {
             .padding(.top, 24)
 
             if selectedDetent != minimizedDetent {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
-                        HStack {
-                            Spacer()
-                            Text("Hari ini · 14.42")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 5)
-                                .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
-                            Spacer()
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            if !chatVM.messages.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    Text("Hari ini")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 5)
+                                        .background(RoundedRectangle(cornerRadius: 20).fill(Color.white))
+                                    Spacer()
+                                }
+                                .padding(.top, 14)
+                            }
+                            ForEach(chatVM.messages) { item in
+                                Group {
+                                    if item.isMine {
+                                        sentBubble(item.text, time: item.time?.timeLabelID ?? "")
+                                    } else {
+                                        receivedBubble(item.text, time: item.time?.timeLabelID ?? "")
+                                    }
+                                }
+                                .id(item.id)
+                            }
                         }
-                        .padding(.top, 14)
-
-                        receivedBubble("Pak, posisi di mana? mau beli cimol 2 bungkus ya", time: "14.41")
-                        sentBubble("Saya OTW ya bu, 2 menit lagi sampai 🙏", time: "14.42")
-                        receivedBubble("Oke pak ditunggu, depan pagar hijau ya", time: "14.42")
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 16)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 16)
+                    .background(Color.appSurfaceBlue)
+                    .onChange(of: chatVM.messages.count) { _, _ in
+                        if let last = chatVM.messages.last {
+                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                        }
+                    }
                 }
-                .background(Color.appSurfaceBlue)
 
                 VStack(spacing: 11) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            quickReplyChip("Sudah sampai")
-                            quickReplyChip("Sebentar lagi")
-                            quickReplyChip("Pesanan siap")
+                            Button { chatVM.send("Sudah sampai") } label: { quickReplyChip("Sudah sampai") }
+                            Button { chatVM.send("Sebentar lagi") } label: { quickReplyChip("Sebentar lagi") }
+                            Button { chatVM.send("Pesanan siap") } label: { quickReplyChip("Pesanan siap") }
                         }
                         .padding(.horizontal, 18)
                     }
@@ -774,7 +806,10 @@ struct KelilingModeView: View {
                             .font(.system(size: 13.5))
                             .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
 
-                        Button {} label: {
+                        Button {
+                            chatVM.send(messageText)
+                            messageText = ""
+                        } label: {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 12)
                                     .fill(Color(red: 0.106, green: 0.31, blue: 0.878))

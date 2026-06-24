@@ -37,7 +37,7 @@ final class MainMapViewModel: ObservableObject {
     @Published var merchants: [NearbyMerchant] = []
     @Published var balance: Int = 0
     @Published var activePings: [ActivePing] = []
-    @Published var routeCoordinates: [CLLocationCoordinate2D] = []
+    @Published var routes: [String: [CLLocationCoordinate2D]] = [:]
 
     private let db = Firestore.firestore()
     private var listener: ListenerRegistration?
@@ -50,6 +50,7 @@ final class MainMapViewModel: ObservableObject {
     private var lastWrittenLocation: CLLocation?
     private var customerName: String = ""
     private var lastPingId: String?
+    private var routedKey: String = ""
 
     func start() {
         Task {
@@ -62,7 +63,12 @@ final class MainMapViewModel: ObservableObject {
     func setUserLocation(_ loc: CLLocation?) {
         userLocation = loc
         rebuild()
-        if let loc { pushLocation(loc) }
+        if let loc {
+            pushLocation(loc)
+            routes = [:]
+            routedKey = ""
+            recomputeRoutes()
+        }
     }
 
     func stop() {
@@ -161,56 +167,42 @@ final class MainMapViewModel: ObservableObject {
             do {
                 let ref = try db.collection("pings").addDocument(from: ping)
                 lastPingId = ref.documentID
-                createChatWithOpeningMessage(merchant: merchant, pingId: ref.documentID, customerUid: uid)
             } catch {
                 print("sendPing: FAILED \(error)")
             }
         }
     }
 
-    func updateRoute(to merchantCoord: CLLocationCoordinate2D) {
+    func pingedMerchant(for ping: ActivePing) -> NearbyMerchant? {
+        merchants.first { $0.id == ping.merchantUid }
+    }
+
+    private func recomputeRoutes() {
         guard let userLoc = userLocation else { return }
         let userCoord = userLoc.coordinate
-        let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoord))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: userCoord))
-        request.transportType = .walking
-        MKDirections(request: request).calculate { [weak self] response, _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                if let polyline = response?.routes.first?.polyline {
-                    self.routeCoordinates = polyline.coordinates
-                } else {
-                    self.routeCoordinates = [merchantCoord, userCoord]
+        let onTheWayPings = activePings.filter { $0.status == .onTheWay }
+        let newKey = onTheWayPings.map(\.merchantUid).sorted().joined(separator: ",")
+        guard newKey != routedKey else { return }
+        routedKey = newKey
+        let activeUids = Set(onTheWayPings.map(\.merchantUid))
+        routes = routes.filter { activeUids.contains($0.key) }
+        for ping in onTheWayPings {
+            guard let merchant = merchants.first(where: { $0.id == ping.merchantUid }) else { continue }
+            let merchantCoord = merchant.coordinate
+            let request = MKDirections.Request()
+            request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoord))
+            request.destination = MKMapItem(placemark: MKPlacemark(coordinate: userCoord))
+            request.transportType = .walking
+            let uid = ping.merchantUid
+            MKDirections(request: request).calculate { [weak self] response, _ in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    if let polyline = response?.routes.first?.polyline {
+                        self.routes[uid] = polyline.coordinates
+                    } else {
+                        self.routes[uid] = [merchantCoord, userCoord]
+                    }
                 }
-            }
-        }
-    }
-
-    func clearRoute() {
-        routeCoordinates = []
-    }
-
-    private func createChatWithOpeningMessage(merchant: NearbyMerchant, pingId: String, customerUid: String) {
-        let chatId = ChatID.make(customerUid: customerUid, merchantUid: merchant.id)
-        let opening = "Halo kak! Boleh mampir ke lokasi saya? Saya tunggu ya 🙏"
-        let chat = Chat(
-            customerUid: customerUid,
-            merchantUid: merchant.id,
-            participantUids: [customerUid, merchant.id],
-            customerName: customerName,
-            merchantName: merchant.name,
-            lastMessage: opening,
-            lastMessageAt: Timestamp(date: Date()),
-            pingId: pingId
-        )
-        let msg = ChatMessage(senderUid: customerUid, senderRole: .customer, text: opening)
-        Task {
-            do {
-                try db.collection("chats").document(chatId).setData(from: chat, merge: true)
-                try db.collection("chats").document(chatId).collection("messages").addDocument(from: msg)
-            } catch {
-                print("createChat: FAILED \(error)")
             }
         }
     }
@@ -283,6 +275,7 @@ final class MainMapViewModel: ObservableObject {
             )
         }
         .sorted { ($0.createdAt ?? .distantPast) > ($1.createdAt ?? .distantPast) }
+        recomputeRoutes()
     }
 
     private func rebuild() {
@@ -302,7 +295,7 @@ final class MainMapViewModel: ObservableObject {
                 isFavorite: favoriteUids.contains(presence.merchantUid),
                 distanceLabel: distLabel,
                 walkLabel: walkLabel,
-                bannerUrl: merchant.bannerUrl
+                bannerUrl: presence.bannerUrl
             )
         }
         .sorted {

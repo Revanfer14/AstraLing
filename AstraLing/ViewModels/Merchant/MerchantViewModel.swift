@@ -94,6 +94,9 @@ final class MerchantViewModel: ObservableObject {
         if let merchant {
             data["name"] = merchant.name
             data["category"] = merchant.category
+            if let bannerUrl = merchant.bannerUrl {
+                data["bannerUrl"] = bannerUrl
+            }
         }
         try? await presenceRef?.setData(data, merge: true)
     }
@@ -130,7 +133,11 @@ final class MerchantViewModel: ObservableObject {
 
         do {
             try await db.collection("merchants").document(uid).updateData(updates)
-            try? await presenceRef?.setData(["name": name], merge: true)
+            var presenceMirror: [String: Any] = ["name": name]
+            if let bannerUrl = updates["bannerUrl"] as? String {
+                presenceMirror["bannerUrl"] = bannerUrl
+            }
+            try? await presenceRef?.setData(presenceMirror, merge: true)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -218,5 +225,33 @@ final class MerchantViewModel: ObservableObject {
         try? await db.collection("merchants").document(uid)
             .collection("menu").document(id)
             .delete()
+    }
+
+    func accept(_ ping: Ping) async {
+        guard let pingId = ping.id else { return }
+        let merchantName = merchant?.name ?? presence?.name ?? "Pedagang"
+        let chatId = ChatID.make(customerUid: ping.customerUid, merchantUid: ping.merchantUid)
+        let opening = "Halo kak, tunggu sebentar ya. Saya otw 🙏"
+        let chatRef = db.collection("chats").document(chatId)
+        let chatSnap = try? await chatRef.getDocument()
+        if chatSnap?.exists != true {
+            let chat = Chat(
+                customerUid: ping.customerUid,
+                merchantUid: ping.merchantUid,
+                participantUids: [ping.customerUid, ping.merchantUid],
+                customerName: ping.customerName,
+                merchantName: merchantName,
+                lastMessage: opening,
+                lastMessageAt: Timestamp(date: Date()),
+                pingId: pingId
+            )
+            try? chatRef.setData(from: chat, merge: false)
+            let msg = ChatMessage(senderUid: ping.merchantUid, senderRole: .merchant, text: opening)
+            try? chatRef.collection("messages").addDocument(from: msg)
+        }
+        try? await db.collection("pings").document(pingId).updateData([
+            "status": PingStatus.onTheWay.rawValue,
+            "updatedAt": Timestamp(date: Date())
+        ])
     }
 }
