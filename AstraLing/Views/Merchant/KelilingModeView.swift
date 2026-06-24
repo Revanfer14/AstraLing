@@ -7,9 +7,10 @@
 
 import SwiftUI
 import MapKit
+import FirebaseFirestore
 
 private struct PinItem: Identifiable {
-    let id = UUID()
+    let id: String
     let initial: String
     let name: String
     let distanceLabel: String
@@ -34,41 +35,65 @@ private let minimizedDetent = PresentationDetent.height(90)
 struct KelilingModeView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     @EnvironmentObject var authViewModel: AuthViewModel
+    @StateObject private var merchantVM = MerchantViewModel()
 
-    @State private var isVisible = true
+    @State private var isVisible = false
+    @State private var isVisibleSynced = false
     @State private var selectedDetent: PresentationDetent = expandedDetent
     @State private var activePing: PinItem? = nil
     @State private var messageText = ""
     @State private var showDashboard = false
     @State private var showEditProfile = false
 
-    private let merchantCenter = CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
-    
+    @StateObject private var location = LocationService()
+    @State private var currentRegion: MKCoordinateRegion = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
+        span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
+    )
+    @State private var pendingRecenter = false
+
     @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
         span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
     ))
 
-    private let allPings: [PinItem] = [
-        PinItem(initial: "E", name: "Erin", distanceLabel: "120 m · 2 menit lalu",
-                color: Color(red: 1, green: 0.478, blue: 0.102),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2058, longitude: 106.8430)),
-        PinItem(initial: "R", name: "Revan", distanceLabel: "240 m · 5 menit lalu",
-                color: Color(red: 0.486, green: 0.227, blue: 0.929),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2095, longitude: 106.8480)),
-        PinItem(initial: "D", name: "Dani", distanceLabel: "320 m · 3 menit lalu",
-                color: Color(red: 0.055, green: 0.647, blue: 0.914),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2115, longitude: 106.8472)),
-        PinItem(initial: "A", name: "Alya", distanceLabel: "380 m · 7 menit lalu",
-                color: Color(red: 0.91, green: 0.271, blue: 0.235),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2118, longitude: 106.8440)),
-        PinItem(initial: "S", name: "Sinta", distanceLabel: "420 m · 4 menit lalu",
-                color: Color(red: 0.486, green: 0.227, blue: 0.929),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2068, longitude: 106.8428)),
-        PinItem(initial: "P", name: "Putri", distanceLabel: "390 m · jalan kaki ± 7 mnt",
-                color: Color(red: 1, green: 0.478, blue: 0.102),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2060, longitude: 106.8462)),
+    private var merchantCoordinate: CLLocationCoordinate2D {
+        guard let loc = merchantVM.presence?.location else {
+            return CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
+        }
+        return CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
+    }
+
+    private let radarRadii: [Double] = [200, 400, 600]
+
+    private let pinPalette: [Color] = [
+        Color(red: 1, green: 0.478, blue: 0.102),
+        Color(red: 0.486, green: 0.227, blue: 0.929),
+        Color(red: 0.055, green: 0.647, blue: 0.914),
+        Color(red: 0.91, green: 0.271, blue: 0.235),
     ]
+
+    private var livePings: [PinItem] {
+        let origin = CLLocation(latitude: merchantCoordinate.latitude, longitude: merchantCoordinate.longitude)
+        return merchantVM.activePings.enumerated().map { index, ping in
+            let dest = CLLocation(latitude: ping.customerLocation.latitude, longitude: ping.customerLocation.longitude)
+            let meters = origin.distance(from: dest)
+            let label = meters < 1000
+                ? "\(Int(meters)) m"
+                : String(format: "%.1f km", meters / 1000)
+            return PinItem(
+                id: ping.id ?? ping.customerUid,
+                initial: String(ping.customerName.prefix(1)).uppercased(),
+                name: ping.customerName,
+                distanceLabel: label,
+                color: pinPalette[index % pinPalette.count],
+                coordinate: CLLocationCoordinate2D(
+                    latitude: ping.customerLocation.latitude,
+                    longitude: ping.customerLocation.longitude
+                )
+            )
+        }
+    }
 
     private var isMinimized: Bool { selectedDetent == minimizedDetent }
 
@@ -93,6 +118,39 @@ struct KelilingModeView: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear {
+            merchantVM.startListening()
+            location.startUpdating()
+        }
+        .onDisappear {
+            merchantVM.stopListening()
+            location.stopUpdating()
+        }
+        .onChange(of: merchantVM.presence?.merchantUid) { _, uid in
+            guard uid != nil, !isVisibleSynced, let presence = merchantVM.presence else { return }
+            isVisibleSynced = true
+            isVisible = presence.isVisible
+            guard let loc = presence.location else { return }
+            let coord = CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
+            let region = MKCoordinateRegion(
+                center: coord,
+                span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
+            )
+            mapPosition = .region(region)
+            currentRegion = region
+        }
+        .onChange(of: location.current) { _, newLocation in
+            guard let newLocation else { return }
+            if pendingRecenter {
+                pendingRecenter = false
+                let newRegion = MKCoordinateRegion(center: newLocation.coordinate, span: currentRegion.span)
+                withAnimation { mapPosition = .region(newRegion) }
+                currentRegion = newRegion
+            }
+            if isVisible {
+                Task { await merchantVM.updateLocation(newLocation.coordinate) }
+            }
+        }
         .sheet(isPresented: $isVisible) {
             Group {
                 if let pin = activePing {
@@ -116,6 +174,7 @@ struct KelilingModeView: View {
                 set: { if !$0 { showDashboard = false } }
             )) {
                 MerchantDashboardView()
+                                .environmentObject(merchantVM)
             }
             .fullScreenCover(isPresented: Binding(
                 get: { showEditProfile && isVisible },
@@ -123,6 +182,7 @@ struct KelilingModeView: View {
             )) {
                 NavigationStack {
                     EditProfilView()
+                        .environmentObject(merchantVM)
                 }
             }
         }
@@ -150,8 +210,8 @@ struct KelilingModeView: View {
             activePing = pin
             if let pin = pin {
                 selectedDetent = minimizedDetent
-                let lats = [merchantCenter.latitude, pin.coordinate.latitude]
-                let lons = [merchantCenter.longitude, pin.coordinate.longitude]
+                let lats = [merchantCoordinate.latitude, pin.coordinate.latitude]
+                let lons = [merchantCoordinate.longitude, pin.coordinate.longitude]
                 let centerLat = (lats.min()! + lats.max()!) / 2
                 let centerLon = (lons.min()! + lons.max()!) / 2
                 let spanLat = max((lats.max()! - lats.min()!) * 3.5, 0.006)
@@ -163,7 +223,7 @@ struct KelilingModeView: View {
             } else {
                 selectedDetent = expandedDetent
                 mapPosition = .region(MKCoordinateRegion(
-                    center: merchantCenter,
+                    center: merchantCoordinate,
                     span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
                 ))
             }
@@ -172,14 +232,15 @@ struct KelilingModeView: View {
 
     private var mapLayer: some View {
         Map(position: $mapPosition) {
+            UserAnnotation()
             if let pin = activePing {
-                MapPolyline(coordinates: [merchantCenter, pin.coordinate])
+                MapPolyline(coordinates: [merchantCoordinate, pin.coordinate])
                     .stroke(
-                        Color(red: 0, green: 0.271, blue: 0.898),
+                        Color.appPrimary,
                         style: StrokeStyle(lineWidth: 7, lineCap: .round, dash: [0, 13])
                     )
 
-                Annotation("", coordinate: merchantCenter) {
+                Annotation("", coordinate: merchantCoordinate) {
                     merchantPin
                 }
 
@@ -188,19 +249,28 @@ struct KelilingModeView: View {
                 }
             } else {
                 if isVisible {
-                    MapCircle(center: merchantCenter, radius: 500)
-                        .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04))
-                        .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.4), lineWidth: 2)
+                    ForEach(Array(radarRadii.enumerated()), id: \.offset) { index, radius in
+                        MapCircle(center: merchantCoordinate, radius: radius)
+                            .foregroundStyle(index == 0
+                                ? Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04)
+                                : Color.clear)
+                            .stroke(
+                                Color(red: 0.106, green: 0.31, blue: 0.878)
+                                    .opacity(index == 0 ? 0.4 : index == 1 ? 0.24 : 0.12),
+                                lineWidth: 2
+                            )
+                    }
 
-                    MapCircle(center: merchantCenter, radius: 900)
-                        .foregroundStyle(.clear)
-                        .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.24), lineWidth: 2)
+                    ForEach(radarRadii, id: \.self) { radius in
+                        Annotation("", coordinate: CLLocationCoordinate2D(
+                            latitude: merchantCoordinate.latitude + radius / 111_320,
+                            longitude: merchantCoordinate.longitude
+                        )) {
+                            radarLabel(radius)
+                        }
+                    }
 
-                    MapCircle(center: merchantCenter, radius: 1300)
-                        .foregroundStyle(.clear)
-                        .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.12), lineWidth: 2)
-
-                    ForEach(allPings) { pin in
+                    ForEach(livePings) { pin in
                         Annotation("", coordinate: pin.coordinate) {
                             customerPin(pin)
                                 .onTapGesture { setActivePing(pin) }
@@ -208,7 +278,7 @@ struct KelilingModeView: View {
                     }
                 }
 
-                Annotation("", coordinate: merchantCenter) {
+                Annotation("", coordinate: merchantCoordinate) {
                     merchantPin
                         .opacity(isVisible ? 1 : 0.5)
                 }
@@ -216,6 +286,9 @@ struct KelilingModeView: View {
         }
         .mapStyle(.standard(elevation: .flat))
         .mapControls {}
+        .onMapCameraChange(frequency: .continuous) { context in
+            currentRegion = context.region
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -223,7 +296,7 @@ struct KelilingModeView: View {
         VStack(spacing: 0) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                    .fill(Color.appPrimary)
                     .frame(width: 40, height: 40)
                     .overlay(
                         RoundedRectangle(cornerRadius: 10)
@@ -267,6 +340,15 @@ struct KelilingModeView: View {
         }
     }
 
+    private func radarLabel(_ meters: Double) -> some View {
+        Text("\(Int(meters)) m")
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.65))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(.white.opacity(0.88)))
+    }
+
     private var dimOverlay: some View {
         Color(red: 0.957, green: 0.965, blue: 0.984)
             .opacity(0.78)
@@ -298,7 +380,7 @@ struct KelilingModeView: View {
                         .frame(width: 46, height: 46)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 6, x: 0, y: 2)
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -306,21 +388,21 @@ struct KelilingModeView: View {
             HStack(spacing: 9) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 9)
-                        .fill(Color(red: 0.906, green: 0.965, blue: 0.937))
+                        .fill(Color.appSuccessBg)
                         .frame(width: 34, height: 34)
                     Image(systemName: "figure.walk")
-                        .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                        .foregroundStyle(Color.appSuccess)
                         .font(.system(size: 15, weight: .medium))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Kamu sedang OTW ke \(pin.name)")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                         .lineLimit(1)
                     Text("\(pin.name) sudah diberi tahu · 120 m lagi")
                         .font(.system(size: 9.5))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                         .lineLimit(1)
                 }
 
@@ -328,12 +410,12 @@ struct KelilingModeView: View {
 
                 Text("± 2 mnt")
                     .font(.system(size: 10))
-                    .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                    .foregroundStyle(Color.appPrimary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(red: 0.839, green: 0.914, blue: 1))
+                            .fill(Color.Token.blue100)
                     )
             }
             .padding(.horizontal, 11)
@@ -350,6 +432,17 @@ struct KelilingModeView: View {
         .padding(.top, 61)
     }
 
+    private var bannerPlaceholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 13)
+                .fill(Color.appPrimary)
+                .frame(width: 42, height: 42)
+            Image(systemName: "fork.knife")
+                .foregroundStyle(.white)
+                .font(.system(size: 16, weight: .semibold))
+        }
+    }
+
     private var floatingHeader: some View {
         VStack(spacing: 11) {
             HStack(spacing: 11) {
@@ -357,23 +450,32 @@ struct KelilingModeView: View {
                     showEditProfile = true
                 } label: {
                     HStack(spacing: 11) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 13)
-                                .fill(Color(red: 0, green: 0.271, blue: 0.898))
-                                .frame(width: 42, height: 42)
-                            Image(systemName: "fork.knife")
-                                .foregroundStyle(.white)
-                                .font(.system(size: 16, weight: .semibold))
+                        Group {
+                            if let urlStr = merchantVM.merchant?.bannerUrl,
+                               let url = URL(string: urlStr) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFill()
+                                            .frame(width: 42, height: 42)
+                                            .clipShape(RoundedRectangle(cornerRadius: 13))
+                                    default:
+                                        bannerPlaceholder
+                                    }
+                                }
+                            } else {
+                                bannerPlaceholder
+                            }
                         }
 
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("Martabak Bang Jarwo")
+                            Text(merchantVM.merchant?.name ?? "Memuat...")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                                .foregroundStyle(Color.appTextPrimary)
                                 .lineLimit(1)
-                            Text("AstraMerchant · ID 0812****34")
+                            Text("AstraMerchant · #\(String((merchantVM.uid ?? "").prefix(8)).uppercased())")
                                 .font(.system(size: 11))
-                                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                                .foregroundStyle(Color.appTextTertiary)
                         }
                     }
                 }
@@ -386,10 +488,10 @@ struct KelilingModeView: View {
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(red: 0.929, green: 0.965, blue: 1))
+                            .fill(Color.appSurfaceBlue)
                             .frame(width: 40, height: 40)
                         Image(systemName: "chart.line.uptrend.xyaxis")
-                            .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                            .foregroundStyle(Color.appPrimary)
                             .font(.system(size: 15, weight: .semibold))
                     }
                 }
@@ -398,8 +500,8 @@ struct KelilingModeView: View {
             HStack(spacing: 10) {
                 Circle()
                     .fill(isVisible
-                          ? Color(red: 0.071, green: 0.478, blue: 0.294)
-                          : Color(red: 0.557, green: 0.557, blue: 0.576))
+                          ? Color.appSuccess
+                          : Color.appTextTertiary)
                     .frame(width: 9, height: 9)
                     .overlay(
                         Circle()
@@ -412,23 +514,34 @@ struct KelilingModeView: View {
                     Text(isVisible ? "Sedang berjualan" : "Sedang tidak berjualan")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(isVisible
-                                         ? Color(red: 0.071, green: 0.478, blue: 0.294)
-                                         : Color(red: 0.557, green: 0.557, blue: 0.576))
+                                         ? Color.appSuccess
+                                         : Color.appTextTertiary)
 
                     Text(isVisible
                          ? "Tokomu aktif & bisa ditemukan customer"
                          : "Tokomu tidak terlihat oleh customer")
                         .font(.system(size: 11))
                         .foregroundStyle(isVisible
-                                         ? Color(red: 0.071, green: 0.478, blue: 0.294)
-                                         : Color(red: 0.557, green: 0.557, blue: 0.576))
+                                         ? Color.appSuccess
+                                         : Color.appTextTertiary)
                 }
 
                 Spacer()
 
-                Toggle("", isOn: $isVisible)
-                    .toggleStyle(SwitchToggleStyle(tint: Color(red: 0.071, green: 0.478, blue: 0.294)))
-                    .labelsHidden()
+                Toggle("", isOn: Binding(
+                    get: { isVisible },
+                    set: { newValue in
+                        isVisible = newValue
+                        Task {
+                            await merchantVM.setVisible(newValue)
+                            if newValue, let current = location.current {
+                                await merchantVM.updateLocation(current.coordinate)
+                            }
+                        }
+                    }
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: Color.appSuccess))
+                .labelsHidden()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
@@ -436,8 +549,8 @@ struct KelilingModeView: View {
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isVisible
-                          ? Color(red: 0.906, green: 0.965, blue: 0.937)
-                          : Color(red: 0.941, green: 0.941, blue: 0.941))
+                          ? Color.appSuccessBg
+                          : Color.appDivider)
                     .animation(.easeInOut(duration: 0.2), value: isVisible)
             )
         }
@@ -445,8 +558,8 @@ struct KelilingModeView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.white.opacity(0.92))
-                .shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 8)
+                .fill(.white)
+//                .shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 8)
         )
         .padding(.horizontal, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -455,17 +568,17 @@ struct KelilingModeView: View {
 
     private var mapControls: some View {
         VStack(spacing: 10) {
-            mapControlButton("plus")
-            mapControlButton("minus")
-            mapControlButton("location")
+            mapControlButton("plus", action: zoomIn)
+            mapControlButton("minus", action: zoomOut)
+            mapControlButton("location", action: recenterOnUser)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(.trailing, 19)
         .padding(.top, 204)
     }
 
-    private func mapControlButton(_ icon: String) -> some View {
-        Button {} label: {
+    private func mapControlButton(_ icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(Color.white)
@@ -475,9 +588,40 @@ struct KelilingModeView: View {
                         radius: 6, x: 0, y: 2
                     )
                 Image(systemName: icon)
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                     .font(.system(size: 18, weight: .medium))
             }
+        }
+    }
+
+    private func zoomIn() {
+        let newSpan = MKCoordinateSpan(
+            latitudeDelta: max(currentRegion.span.latitudeDelta * 0.5, 0.001),
+            longitudeDelta: max(currentRegion.span.longitudeDelta * 0.5, 0.001)
+        )
+        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
+        withAnimation { mapPosition = .region(newRegion) }
+        currentRegion = newRegion
+    }
+
+    private func zoomOut() {
+        let newSpan = MKCoordinateSpan(
+            latitudeDelta: min(currentRegion.span.latitudeDelta * 2.0, 1.0),
+            longitudeDelta: min(currentRegion.span.longitudeDelta * 2.0, 1.0)
+        )
+        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
+        withAnimation { mapPosition = .region(newRegion) }
+        currentRegion = newRegion
+    }
+
+    private func recenterOnUser() {
+        location.requestWhenInUse()
+        if let current = location.current {
+            let newRegion = MKCoordinateRegion(center: current.coordinate, span: currentRegion.span)
+            withAnimation { mapPosition = .region(newRegion) }
+            currentRegion = newRegion
+        } else {
+            pendingRecenter = true
         }
     }
 
@@ -485,14 +629,14 @@ struct KelilingModeView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Ping dari pelanggan")
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                .foregroundStyle(Color.appTextPrimary)
                 .padding(.horizontal, 16)
                 .padding(.top, 28)
 
             HStack(spacing: 8) {
-                Text("\(allPings.count) customer")
+                Text("\(livePings.count) customer")
                     .font(.system(size: 11.5))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("dalam radius 500 m · update barusan")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
@@ -503,8 +647,8 @@ struct KelilingModeView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(Array(allPings.enumerated()), id: \.element.id) { index, pin in
-                        pingRow(pin, showDivider: index < allPings.count - 1)
+                    ForEach(Array(livePings.enumerated()), id: \.element.id) { index, pin in
+                        pingRow(pin, showDivider: index < livePings.count - 1)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -520,17 +664,17 @@ struct KelilingModeView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 11)
-                        .fill(Color(red: 0.941, green: 0.941, blue: 0.941))
+                        .fill(Color.appDivider)
                         .frame(width: 44, height: 44)
                     Image(systemName: "person.fill")
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                         .font(.system(size: 22))
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(pin.name)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
 
                     HStack(spacing: 5) {
                         Image(systemName: "location.fill")
@@ -551,7 +695,7 @@ struct KelilingModeView: View {
                         .frame(width: 97, height: 34)
                         .background(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                                .fill(Color.appPrimary)
                         )
                 }
             }
@@ -570,7 +714,7 @@ struct KelilingModeView: View {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0, green: 0.271, blue: 0.898))
+                        .fill(Color.appPrimary)
                         .frame(width: 48, height: 48)
                     Text(pin.initial)
                         .font(.system(size: 18))
@@ -580,10 +724,10 @@ struct KelilingModeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(pin.name)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                     Text("Menunggu kamu · 120 m")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
+                        .foregroundStyle(Color.appSuccess)
                 }
 
                 Spacer()
@@ -613,7 +757,7 @@ struct KelilingModeView: View {
                     .padding(.horizontal, 18)
                     .padding(.bottom, 16)
                 }
-                .background(Color(red: 0.929, green: 0.965, blue: 1))
+                .background(Color.appSurfaceBlue)
 
                 VStack(spacing: 11) {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -673,14 +817,14 @@ struct KelilingModeView: View {
             VStack(alignment: .leading, spacing: 3.6) {
                 Text(text)
                     .font(.system(size: 14))
-                    .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149))
+                    .foregroundStyle(Color.appTextPrimary)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack {
                     Spacer()
                     Text(time)
                         .font(.system(size: 9.5))
-                        .foregroundStyle(Color(red: 0.055, green: 0.09, blue: 0.149).opacity(0.6))
+                        .foregroundStyle(Color.appTextPrimary.opacity(0.6))
                 }
             }
             .padding(.horizontal, 14)
@@ -731,7 +875,7 @@ struct KelilingModeView: View {
                     topLeadingRadius: 15, bottomLeadingRadius: 15,
                     bottomTrailingRadius: 5, topTrailingRadius: 15
                 )
-                .fill(Color(red: 0.024, green: 0.369, blue: 1))
+                .fill(Color.appPrimaryPressed)
             )
             .frame(maxWidth: 280, alignment: .leading)
         }

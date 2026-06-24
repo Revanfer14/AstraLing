@@ -7,47 +7,9 @@
 
 import SwiftUI
 
-private struct TransaksiItem: Identifiable {
-    let id = UUID()
-    enum IconKind { case qris, transfer }
-    let icon: IconKind
-    let name: String
-    let time: String
-    let method: String
-    let amount: String
-    let isIncome: Bool
-}
-
-private struct TransaksiSection: Identifiable {
-    let id = UUID()
-    let dayLabel: String
-    let total: String
-    let items: [TransaksiItem]
-}
-
-private let sections: [TransaksiSection] = [
-    TransaksiSection(
-        dayLabel: "Hari ini · Selasa, 16 Mei",
-        total: "+ Rp 1.245.000",
-        items: [
-            TransaksiItem(icon: .qris, name: "Dari Sela", time: "14.41", method: "QRIS AstraPay", amount: "+Rp 24.000", isIncome: true),
-            TransaksiItem(icon: .qris, name: "Dari Rian", time: "14.20", method: "QRIS AstraPay", amount: "+Rp 35.000", isIncome: true),
-            TransaksiItem(icon: .qris, name: "Dari Putri", time: "13.58", method: "QRIS Bank lain", amount: "+Rp 18.000", isIncome: true),
-            TransaksiItem(icon: .transfer, name: "Transfer ke AstraPay", time: "11.30", method: "Saldo pribadi", amount: "-Rp 500.000", isIncome: false),
-        ]
-    ),
-    TransaksiSection(
-        dayLabel: "Kemarin · Senin, 15 Mei",
-        total: "+ Rp 980.000",
-        items: [
-            TransaksiItem(icon: .qris, name: "Dari Andi", time: "19.05", method: "QRIS AstraPay", amount: "+Rp 40.000", isIncome: true),
-            TransaksiItem(icon: .qris, name: "Dari Maya", time: "18.40", method: "QRIS AstraPay", amount: "+Rp 22.000", isIncome: true),
-        ]
-    ),
-]
-
 struct RiwayatTransaksiView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var txnVM: TransactionViewModel
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -57,15 +19,15 @@ struct RiwayatTransaksiView: View {
 
                 summaryCard
 
-                ForEach(sections) { section in
-                    sectionHeader(section)
-                    transactionCard(section.items)
+                ForEach(txnVM.groupedByDay, id: \.label) { group in
+                    sectionHeader(label: group.label, total: group.total)
+                    transactionCard(group.items)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 40)
         }
-        .background(Color(red: 0.988, green: 0.988, blue: 0.988).ignoresSafeArea())
+        .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
     }
 
@@ -74,11 +36,11 @@ struct RiwayatTransaksiView: View {
             Button { dismiss() } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .frame(width: 44, height: 44)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                        .foregroundStyle(Color.appTextPrimary)
                         .font(.system(size: 16, weight: .semibold))
                 }
             }
@@ -86,10 +48,10 @@ struct RiwayatTransaksiView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Riwayat Transaksi")
                     .font(.system(size: 18))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("Semua pemasukan & penarikan")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
 
             Spacer()
@@ -97,17 +59,17 @@ struct RiwayatTransaksiView: View {
             Button {} label: {
                 HStack(spacing: 6) {
                     Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                        .foregroundStyle(Color.appPrimary)
                         .font(.system(size: 13))
                     Text("Filter")
                         .font(.system(size: 12))
-                        .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                        .foregroundStyle(Color.appPrimary)
                 }
                 .padding(.horizontal, 12)
                 .frame(height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                        .fill(Color.appBackground)
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                 )
             }
@@ -118,88 +80,96 @@ struct RiwayatTransaksiView: View {
     private var summaryCard: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Rp 1.245.000")
+                Text(txnVM.todayTotal.rupiah)
                     .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
-                Text("Total masuk hari ini · 42 transaksi")
+                    .foregroundStyle(Color.appTextPrimary)
+                Text("Total masuk hari ini · \(txnVM.todayCount) transaksi")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                    .foregroundStyle(Color.appTextTertiary)
             }
 
             Spacer()
 
             Text("Hari ini ▾")
                 .font(.system(size: 11.5))
-                .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                .foregroundStyle(Color.appPrimary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 11)
-                        .fill(Color(red: 0.929, green: 0.965, blue: 1))
+                        .fill(Color.appSurfaceBlue)
                 )
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                .fill(Color.appBackground)
                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.08), radius: 13, x: 0, y: 8)
         )
     }
 
-    private func sectionHeader(_ section: TransaksiSection) -> some View {
+    private func sectionHeader(label: String, total: Int) -> some View {
         HStack {
-            Text(section.dayLabel)
+            Text(label)
                 .font(.system(size: 12))
-                .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                .foregroundStyle(Color.appTextTertiary)
             Spacer()
-            Text(section.total)
+            Text("+ \(total.rupiah)")
                 .font(.system(size: 12))
-                .foregroundStyle(Color(red: 0.459, green: 0.459, blue: 0.459))
+                .foregroundStyle(Color.appTextSecondary)
         }
         .padding(.top, 8)
     }
 
-    private func transactionCard(_ items: [TransaksiItem]) -> some View {
+    private func transactionCard(_ items: [Transaction]) -> some View {
         VStack(spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                transactionRow(item, showDivider: index < items.count - 1)
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, txn in
+                transactionRow(txn, showDivider: index < items.count - 1)
             }
         }
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color(red: 0.988, green: 0.988, blue: 0.988))
+                .fill(Color.appBackground)
                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 16, x: 0, y: 4)
         )
     }
 
     @ViewBuilder
-    private func transactionRow(_ item: TransaksiItem, showDivider: Bool) -> some View {
+    private func transactionRow(_ txn: Transaction, showDivider: Bool) -> some View {
+        let isIncome = txn.type == .payment
+        let name = isIncome
+            ? "Dari \(txn.customerName ?? "Pelanggan")"
+            : "Transfer ke AstraPay"
+        let amountStr = isIncome
+            ? "+\(txn.amount.rupiah)"
+            : "-\(txn.amount.rupiah)"
+
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                transactionIcon(item)
+                transactionIcon(isIncome: isIncome)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.name)
+                    Text(name)
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Color(red: 0.102, green: 0.102, blue: 0.102))
-                    Text("\(item.time) · \(item.method)")
+                        .foregroundStyle(Color.appTextPrimary)
+                    Text("\(TransactionViewModel.timeString(txn.createdAt)) · \(txn.method)")
                         .font(.system(size: 11.5))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                 }
 
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(item.amount)
+                    Text(amountStr)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(
-                            item.isIncome
-                                ? Color(red: 0.071, green: 0.478, blue: 0.294)
+                            isIncome
+                                ? Color.appSuccess
                                 : Color(red: 0.851, green: 0, blue: 0)
                         )
-                    Text("Berhasil")
+                    Text(txn.status == .success ? "Berhasil" : "Gagal")
                         .font(.system(size: 10))
-                        .foregroundStyle(Color(red: 0.557, green: 0.557, blue: 0.576))
+                        .foregroundStyle(Color.appTextTertiary)
                 }
             }
             .padding(.horizontal, 15)
@@ -207,7 +177,7 @@ struct RiwayatTransaksiView: View {
 
             if showDivider {
                 Rectangle()
-                    .fill(Color(red: 0.941, green: 0.941, blue: 0.941))
+                    .fill(Color.appDivider)
                     .frame(height: 1)
                     .padding(.horizontal, 15)
             }
@@ -215,24 +185,19 @@ struct RiwayatTransaksiView: View {
     }
 
     @ViewBuilder
-    private func transactionIcon(_ item: TransaksiItem) -> some View {
+    private func transactionIcon(isIncome: Bool) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 13)
-                .fill(
-                    item.icon == .qris
-                        ? Color(red: 0.906, green: 0.965, blue: 0.937)
-                        : Color(red: 0.929, green: 0.965, blue: 1)
-                )
+                .fill(isIncome ? Color.appSuccessBg : Color.appSurfaceBlue)
                 .frame(width: 44, height: 44)
 
-            switch item.icon {
-            case .qris:
+            if isIncome {
                 Text("QRIS")
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(red: 0.071, green: 0.478, blue: 0.294))
-            case .transfer:
+                    .foregroundStyle(Color.appSuccess)
+            } else {
                 Image(systemName: "arrow.up")
-                    .foregroundStyle(Color(red: 0, green: 0.271, blue: 0.898))
+                    .foregroundStyle(Color.appPrimary)
                     .font(.system(size: 16, weight: .semibold))
             }
         }
@@ -242,5 +207,6 @@ struct RiwayatTransaksiView: View {
 #Preview {
     NavigationStack {
         RiwayatTransaksiView()
+            .environmentObject(TransactionViewModel())
     }
 }
