@@ -19,12 +19,16 @@ final class MerchantViewModel: ObservableObject {
     @Published var activePings: [Ping] = []
     @Published var isSaving = false
     @Published var errorMessage: String? = nil
+    @Published var newTransaction: Transaction? = nil
 
     private let db = Firestore.firestore()
     private var profileListener: ListenerRegistration?
     private var presenceListener: ListenerRegistration?
     private var menuListener: ListenerRegistration?
     private var pingsListener: ListenerRegistration?
+    private var transactionListener: ListenerRegistration?
+    private var knownTransactionIds: Set<String> = []
+    private var isFirstTransactionLoad = true
 
     var uid: String? { Auth.auth().currentUser?.uid }
 
@@ -66,6 +70,30 @@ final class MerchantViewModel: ObservableObject {
                     try? $0.data(as: Ping.self)
                 } ?? []).filter { $0.status == .active || $0.status == .onTheWay }
             }
+
+        isFirstTransactionLoad = true
+        transactionListener = db.collection("transactions")
+            .whereField("merchantUid", isEqualTo: uid)
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self, let snapshot else { return }
+                if self.isFirstTransactionLoad {
+                    self.isFirstTransactionLoad = false
+                    self.knownTransactionIds = Set(snapshot.documents.map { $0.documentID })
+                    return
+                }
+                for change in snapshot.documentChanges where change.type == .added {
+                    let docId = change.document.documentID
+                    guard !self.knownTransactionIds.contains(docId) else { continue }
+                    self.knownTransactionIds.insert(docId)
+                    if let txn = try? change.document.data(as: Transaction.self), txn.status == .success {
+                        self.newTransaction = txn
+                        NotificationService.shared.postTransactionArrived(
+                            amount: txn.amount.rupiah,
+                            customerName: txn.customerName ?? "Pelanggan"
+                        )
+                    }
+                }
+            }
     }
 
     func stopListening() {
@@ -73,10 +101,19 @@ final class MerchantViewModel: ObservableObject {
         presenceListener?.remove()
         menuListener?.remove()
         pingsListener?.remove()
+        transactionListener?.remove()
         profileListener = nil
         presenceListener = nil
         menuListener = nil
         pingsListener = nil
+        transactionListener = nil
+    }
+
+    func completePing(pingId: String) async {
+        try? await db.collection("pings").document(pingId).updateData([
+            "status": PingStatus.completed.rawValue,
+            "updatedAt": Timestamp(date: Date())
+        ])
     }
 
     private var presenceRef: DocumentReference? {

@@ -14,6 +14,7 @@ struct AstraLingApp: App {
     
     init() {
         FirebaseApp.configure()
+        NotificationService.shared.requestAuthorization()
     }
     
     var body: some Scene {

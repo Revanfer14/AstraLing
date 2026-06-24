@@ -21,8 +21,6 @@ final class TransactionViewModel: ObservableObject {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         listener = db.collection("transactions")
             .whereField("merchantUid", isEqualTo: uid)
-            .order(by: "createdAt", descending: true)
-            .limit(to: 100)
             .addSnapshotListener { [weak self] snapshot, _ in
                 guard let self else { return }
                 self.transactions = snapshot?.documents.compactMap {
@@ -57,15 +55,45 @@ final class TransactionViewModel: ObservableObject {
     }
 
     var groupedByDay: [(label: String, total: Int, items: [Transaction])] {
+        makeGroups(from: transactions)
+    }
+
+    func groupedTransactions(days: Int?) -> [(label: String, total: Int, items: [Transaction])] {
+        makeGroups(from: filtered(days: days))
+    }
+
+    func summaryTotal(days: Int?) -> Int {
+        filtered(days: days)
+            .filter { $0.type == .payment && $0.status == .success }
+            .reduce(0) { $0 + $1.amount }
+    }
+
+    func summaryCount(days: Int?) -> Int {
+        filtered(days: days)
+            .filter { $0.type == .payment && $0.status == .success }
+            .count
+    }
+
+    private func filtered(days: Int?) -> [Transaction] {
+        guard let days else { return transactions }
+        let cal = Calendar.current
+        if days == 0 {
+            return transactions.filter {
+                cal.isDateInToday($0.createdAt?.dateValue() ?? .distantPast)
+            }
+        }
+        let cutoff = cal.date(byAdding: .day, value: -days, to: Date()) ?? .distantPast
+        return transactions.filter { ($0.createdAt?.dateValue() ?? .distantPast) >= cutoff }
+    }
+
+    private func makeGroups(from source: [Transaction]) -> [(label: String, total: Int, items: [Transaction])] {
         let cal = Calendar.current
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "id_ID")
         fmt.dateFormat = "EEEE, d MMM"
-
-        let grouped = Dictionary(grouping: transactions) { txn -> Date in
+        let grouped = Dictionary(grouping: source) { txn -> Date in
             cal.startOfDay(for: txn.createdAt?.dateValue() ?? Date())
         }
-
         return grouped
             .sorted { $0.key > $1.key }
             .map { date, items in

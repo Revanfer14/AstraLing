@@ -6,15 +6,31 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
 
 struct TransaksiBerhasilView: View {
     @Environment(\.dismiss) private var dismiss
+
+    let transaction: Transaction
+    var onComplete: (() -> Void)? = nil
 
     private let greenDark    = Color.appSuccess
     private let greenLight   = Color.appSuccessBg
     private let darkText     = Color.appTextPrimary
     private let greyText     = Color.appTextTertiary
     private let dividerColor = Color.appDivider
+
+    private var customerName: String {
+        transaction.customerName ?? "Customer"
+    }
+
+    private var formattedDateTime: String {
+        guard let ts = transaction.createdAt else { return "--" }
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "id_ID")
+        fmt.dateFormat = "d MMM yyyy · HH.mm"
+        return fmt.string(from: ts.dateValue())
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -95,7 +111,7 @@ struct TransaksiBerhasilView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(greyText)
 
-            Text("Rp 36.000")
+            Text(transaction.amount.rupiah)
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(darkText)
                 .padding(.bottom, 7)
@@ -123,10 +139,10 @@ struct TransaksiBerhasilView: View {
 
     private var detailsCard: some View {
         VStack(spacing: 0) {
-            detailRow(label: "Metode",       value: "QRIS AstraPay",       hasDivider: true)
-            detailRow(label: "Dari",         value: "Erin",                 hasDivider: true)
-            detailRow(label: "Waktu",        value: "16 Mei 2025 · 14.44", hasDivider: true)
-            detailRow(label: "ID Transaksi", value: "#QR250516-0042",       hasDivider: false)
+            detailRow(label: "Metode",       value: transaction.method,    hasDivider: true)
+            detailRow(label: "Dari",         value: customerName,          hasDivider: true)
+            detailRow(label: "Waktu",        value: formattedDateTime,     hasDivider: true)
+            detailRow(label: "ID Transaksi", value: transaction.displayId, hasDivider: false)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 4)
@@ -160,7 +176,10 @@ struct TransaksiBerhasilView: View {
     }
 
     private var selesaikanButton: some View {
-        Button {} label: {
+        Button {
+            onComplete?()
+            dismiss()
+        } label: {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark")
                     .font(.system(size: 16, weight: .bold))
@@ -182,15 +201,9 @@ struct TransaksiBerhasilView: View {
             Image(systemName: "info.circle")
                 .font(.system(size: 12))
                 .foregroundStyle(greyText)
-            Text("Tandai pesanan Erin sudah selesai")
+            Text("Tandai pesanan \(customerName) sudah selesai")
                 .font(.system(size: 12))
                 .foregroundStyle(greyText)
         }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        TransaksiBerhasilView()
     }
 }

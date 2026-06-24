@@ -7,9 +7,24 @@
 
 import SwiftUI
 
+private struct Period: Identifiable, Hashable {
+    let id: Int
+    let label: String
+    let days: Int?
+}
+
+private let periods: [Period] = [
+    Period(id: 0, label: "Hari ini", days: 0),
+    Period(id: 1, label: "7 Hari",   days: 7),
+    Period(id: 2, label: "30 Hari",  days: 30),
+    Period(id: 3, label: "Semua",    days: nil),
+]
+
 struct RiwayatTransaksiView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var txnVM: TransactionViewModel
+
+    @State private var selectedPeriod: Period = periods[0]
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -19,9 +34,16 @@ struct RiwayatTransaksiView: View {
 
                 summaryCard
 
-                ForEach(txnVM.groupedByDay, id: \.label) { group in
-                    sectionHeader(label: group.label, total: group.total)
-                    transactionCard(group.items)
+                let groups = txnVM.groupedTransactions(days: selectedPeriod.days)
+                if groups.isEmpty {
+                    emptyState
+                        .padding(.top, 48)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    ForEach(groups, id: \.label) { group in
+                        sectionHeader(label: group.label, total: group.total)
+                        transactionCard(group.items)
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -29,6 +51,7 @@ struct RiwayatTransaksiView: View {
         }
         .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
+        .onAppear { txnVM.startListening() }
     }
 
     private var headerSection: some View {
@@ -55,50 +78,42 @@ struct RiwayatTransaksiView: View {
             }
 
             Spacer()
-
-            Button {} label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(Color.appPrimary)
-                        .font(.system(size: 13))
-                    Text("Filter")
-                        .font(.system(size: 12))
-                        .foregroundStyle(Color.appPrimary)
-                }
-                .padding(.horizontal, 12)
-                .frame(height: 44)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.appBackground)
-                        .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
-                )
-            }
         }
         .padding(.bottom, 10)
     }
 
     private var summaryCard: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(txnVM.todayTotal.rupiah)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(Color.appTextPrimary)
-                Text("Total masuk hari ini · \(txnVM.todayCount) transaksi")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.appTextTertiary)
+        VStack(spacing: 12) {
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(txnVM.summaryTotal(days: selectedPeriod.days).rupiah)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundStyle(Color.appTextPrimary)
+                    Text("Total masuk · \(txnVM.summaryCount(days: selectedPeriod.days)) transaksi")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Color.appTextTertiary)
+                }
+                Spacer()
             }
 
-            Spacer()
-
-            Text("Hari ini ▾")
-                .font(.system(size: 11.5))
-                .foregroundStyle(Color.appPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 11)
-                        .fill(Color.appSurfaceBlue)
-                )
+            HStack(spacing: 8) {
+                ForEach(periods) { period in
+                    Button {
+                        selectedPeriod = period
+                    } label: {
+                        Text(period.label)
+                            .font(.system(size: 11.5, weight: selectedPeriod == period ? .semibold : .regular))
+                            .foregroundStyle(selectedPeriod == period ? Color.white : Color.appPrimary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(selectedPeriod == period ? Color.appPrimary : Color.appSurfaceBlue)
+                            )
+                    }
+                }
+                Spacer()
+            }
         }
         .padding(16)
         .background(
@@ -106,6 +121,21 @@ struct RiwayatTransaksiView: View {
                 .fill(Color.appBackground)
                 .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.08), radius: 13, x: 0, y: 8)
         )
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 40))
+                .foregroundStyle(Color.appTextTertiary)
+            Text("Belum ada transaksi")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Color.appTextSecondary)
+            Text("Transaksi dari pelanggan akan muncul di sini")
+                .font(.system(size: 13))
+                .foregroundStyle(Color.appTextTertiary)
+                .multilineTextAlignment(.center)
+        }
     }
 
     private func sectionHeader(label: String, total: Int) -> some View {

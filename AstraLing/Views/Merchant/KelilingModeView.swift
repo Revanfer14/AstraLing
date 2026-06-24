@@ -33,6 +33,20 @@ private struct DownTriangle: Shape {
 private let expandedDetent = PresentationDetent.height(240)
 private let minimizedDetent = PresentationDetent.height(90)
 
+private enum FullScreenDestination: Identifiable {
+    case dashboard
+    case editProfile
+    case transactionSuccess(Transaction)
+
+    var id: String {
+        switch self {
+        case .dashboard: return "dashboard"
+        case .editProfile: return "editProfile"
+        case .transactionSuccess(let t): return "txn_\(t.id ?? UUID().uuidString)"
+        }
+    }
+}
+
 struct KelilingModeView: View {
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     @EnvironmentObject var authViewModel: AuthViewModel
@@ -44,8 +58,7 @@ struct KelilingModeView: View {
     @State private var selectedDetent: PresentationDetent = expandedDetent
     @State private var activePing: PinItem? = nil
     @State private var messageText = ""
-    @State private var showDashboard = false
-    @State private var showEditProfile = false
+    @State private var fullScreen: FullScreenDestination? = nil
 
     @StateObject private var location = LocationService()
     @State private var currentRegion: MKCoordinateRegion = MKCoordinateRegion(
@@ -172,44 +185,48 @@ struct KelilingModeView: View {
                         .presentationCornerRadius(34)
                 }
             }
-            .fullScreenCover(isPresented: Binding(
-                get: { showDashboard && isVisible },
-                set: { if !$0 { showDashboard = false } }
-            )) {
-                MerchantDashboardView()
-                                .environmentObject(merchantVM)
-            }
-            .fullScreenCover(isPresented: Binding(
-                get: { showEditProfile && isVisible },
-                set: { if !$0 { showEditProfile = false } }
-            )) {
-                NavigationStack {
-                    EditProfilView()
-                        .environmentObject(merchantVM)
-                }
-            }
+            .fullScreenCover(item: Binding(
+                get: { isVisible ? fullScreen : nil },
+                set: { fullScreen = $0 }
+            )) { fullScreenContent($0) }
         }
         .onChange(of: isVisible) { _, newValue in
             if newValue { selectedDetent = expandedDetent }
         }
-        .fullScreenCover(isPresented: Binding(
-            get: { showDashboard && !isVisible },
-            set: { if !$0 { showDashboard = false } }
-        )) {
+        .fullScreenCover(item: Binding(
+            get: { isVisible ? nil : fullScreen },
+            set: { fullScreen = $0 }
+        )) { fullScreenContent($0) }
+        .onChange(of: merchantVM.newTransaction?.id) { _, newId in
+            guard newId != nil, let txn = merchantVM.newTransaction else { return }
+            fullScreen = .transactionSuccess(txn)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { _ in
+            guard let txn = merchantVM.newTransaction else { return }
+            fullScreen = .transactionSuccess(txn)
+        }
+    }
+    
+    @ViewBuilder
+    private func fullScreenContent(_ dest: FullScreenDestination) -> some View {
+        switch dest {
+        case .dashboard:
             MerchantDashboardView()
                 .environmentObject(merchantVM)
-        }
-        .fullScreenCover(isPresented: Binding(
-            get: { showEditProfile && !isVisible },
-            set: { if !$0 { showEditProfile = false } }
-        )) {
+        case .editProfile:
             NavigationStack {
                 EditProfilView()
                     .environmentObject(merchantVM)
             }
+        case .transactionSuccess(let txn):
+            TransaksiBerhasilView(transaction: txn) {
+                if let pingId = txn.pingId {
+                    Task { await merchantVM.completePing(pingId: pingId) }
+                }
+            }
         }
     }
-    
+
     private func setActivePing(_ pin: PinItem?) {
         if let pin = pin {
             chatVM.start(customerUid: pin.customerUid)
@@ -457,7 +474,7 @@ struct KelilingModeView: View {
         VStack(spacing: 11) {
             HStack(spacing: 11) {
                 Button {
-                    showEditProfile = true
+                    fullScreen = .editProfile
                 } label: {
                     HStack(spacing: 11) {
                         Group {
@@ -494,7 +511,7 @@ struct KelilingModeView: View {
                 Spacer()
 
                 Button {
-                    showDashboard = true
+                    fullScreen = .dashboard
                 } label: {
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)

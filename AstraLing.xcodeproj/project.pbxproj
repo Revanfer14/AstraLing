@@ -18,9 +18,22 @@
 		76ADF2512FDEAA74008E2EE4 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		61A5B0C02FEC5320004547D3 /* Exceptions for "AstraLing" folder in "AstraLing" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7688A09C2FDEA07600F2C7CC /* AstraLing */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7688A09F2FDEA07600F2C7CC /* AstraLing */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				61A5B0C02FEC5320004547D3 /* Exceptions for "AstraLing" folder in "AstraLing" target */,
+			);
 			path = AstraLing;
 			sourceTree = "<group>";
 		};
@@ -287,9 +300,10 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AstraLing/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Aplikasi ini memerlukan akses ke kamera untuk mengambil foto profil.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kami menggunakan lokasi Anda untuk menemukan pedagang di sekitar, menampilkan posisi Anda di peta, serta memberikan estimasi jarak dan waktu tempuh.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk menyimpan foto profil.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Aplikasi ini memerlukan akses ke kamera untuk mengambil foto profil.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk memilih foto profil.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -328,9 +342,10 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AstraLing/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Aplikasi ini memerlukan akses ke kamera untuk mengambil foto profil.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kami menggunakan lokasi Anda untuk menemukan pedagang di sekitar, menampilkan posisi Anda di peta, serta memberikan estimasi jarak dan waktu tempuh.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk menyimpan foto profil.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Aplikasi ini memerlukan akses ke kamera untuk mengambil foto profil.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk memilih foto profil.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
