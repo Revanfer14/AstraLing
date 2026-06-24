@@ -64,6 +64,8 @@ struct KelilingModeView: View {
         return CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
     }
 
+    private let radarRadii: [Double] = [200, 400, 600]
+
     private let pinPalette: [Color] = [
         Color(red: 1, green: 0.478, blue: 0.102),
         Color(red: 0.486, green: 0.227, blue: 0.929),
@@ -247,17 +249,26 @@ struct KelilingModeView: View {
                 }
             } else {
                 if isVisible {
-                    MapCircle(center: merchantCoordinate, radius: 200)
-                        .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04))
-                        .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.4), lineWidth: 2)
+                    ForEach(Array(radarRadii.enumerated()), id: \.offset) { index, radius in
+                        MapCircle(center: merchantCoordinate, radius: radius)
+                            .foregroundStyle(index == 0
+                                ? Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04)
+                                : Color.clear)
+                            .stroke(
+                                Color(red: 0.106, green: 0.31, blue: 0.878)
+                                    .opacity(index == 0 ? 0.4 : index == 1 ? 0.24 : 0.12),
+                                lineWidth: 2
+                            )
+                    }
 
-                    MapCircle(center: merchantCoordinate, radius: 400)
-                        .foregroundStyle(.clear)
-                        .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.24), lineWidth: 2)
-
-                    MapCircle(center: merchantCoordinate, radius: 600)
-                        .foregroundStyle(.clear)
-                        .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.12), lineWidth: 2)
+                    ForEach(radarRadii, id: \.self) { radius in
+                        Annotation("", coordinate: CLLocationCoordinate2D(
+                            latitude: merchantCoordinate.latitude + radius / 111_320,
+                            longitude: merchantCoordinate.longitude
+                        )) {
+                            radarLabel(radius)
+                        }
+                    }
 
                     ForEach(livePings) { pin in
                         Annotation("", coordinate: pin.coordinate) {
@@ -327,6 +338,15 @@ struct KelilingModeView: View {
                 .frame(width: 14, height: 9)
                 .shadow(color: .black.opacity(0.18), radius: 2, x: 0, y: 3)
         }
+    }
+
+    private func radarLabel(_ meters: Double) -> some View {
+        Text("\(Int(meters)) m")
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.65))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(.white.opacity(0.88)))
     }
 
     private var dimOverlay: some View {
