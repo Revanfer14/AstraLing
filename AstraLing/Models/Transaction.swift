@@ -13,7 +13,7 @@ enum TransactionStatus: String, Codable {
 /// `transactions/{txnId}` — QR payments and balance transfers.
 ///
 /// Payment must be written atomically with the balance debit/credit via Firestore.runTransaction.
-struct Transaction: Codable {
+struct Transaction: Identifiable, Codable {
     @DocumentID var id: String?
     var type: TransactionType
     var displayId: String                // human-facing, e.g. "#QR250516-0042"

@@ -14,7 +14,9 @@ struct AstraPayHomeView: View {
     @StateObject private var homeVM = CustomerHomeViewModel()
     @State private var showAstraLing = false
     @State private var showMainMap = false
+    @State private var showAstraPoints = false
     @State private var openMapAfterOnboarding = false
+    @State private var selectedTab: CustomerTab = .beranda
 
     private let menuItems: [MenuTileItem] = [
         MenuTileItem(title: "AstraLing",          assetName: "astraling_logo"),
@@ -31,26 +33,31 @@ struct AstraPayHomeView: View {
         ZStack(alignment: .bottom) {
             Color.appBackground.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    CustomerHomeHeader(name: homeVM.name)
+            if selectedTab == .riwayat {
+                CustomerHistoryView()
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        CustomerHomeHeader(name: homeVM.name)
 
-                    VStack(spacing: 12) {
-                        CustomerBalanceCard(
-                            balance: homeVM.balance,
-                            astraPoints: homeVM.astraPoints,
-                            onAstraPoints: openAstraPoints
-                        )
-                        .padding(.top, -20)
+                        VStack(spacing: 12) {
+                            CustomerBalanceCard(
+                                balance: homeVM.balance,
+                                astraPoints: homeVM.astraPoints,
+                                onAstraPoints: openAstraPoints
+                            )
+                            .padding(.top, -20)
 
-                        CustomerPromoBanner()
+                            CustomerPromoBanner()
 
-                        CustomerMenuGrid(items: menuItems, onAstraLing: openAstraLing)
+                            CustomerMenuGrid(items: menuItems, onAstraLing: openAstraLing)
+                        }
+                        .padding(.horizontal, 16)
+
+                        Spacer(minLength: 120)
                     }
-                    .padding(.horizontal, 16)
-
-                    Spacer(minLength: 120)
                 }
+                .ignoresSafeArea(edges: .top)
             }
 
             VStack(spacing: 0) {
@@ -59,12 +66,11 @@ struct AstraPayHomeView: View {
                     .padding(.bottom, 44)
             }
 
-            CustomerTabBar(onProfil: {
+            CustomerTabBar(selection: $selectedTab, onProfil: {
                 authViewModel.logout()
                 selectedRoleRaw = ""
             })
         }
-        .ignoresSafeArea(edges: .top)
         .task { await homeVM.load() }
         .fullScreenCover(isPresented: $showAstraLing, onDismiss: {
             if openMapAfterOnboarding {
@@ -78,6 +84,7 @@ struct AstraPayHomeView: View {
             })
         }
         .fullScreenCover(isPresented: $showMainMap) { MainMapView() }
+        .fullScreenCover(isPresented: $showAstraPoints) { AstraPointsView() }
     }
 
     private func openAstraLing() {
@@ -89,6 +96,7 @@ struct AstraPayHomeView: View {
     }
 
     private func openAstraPoints() {
+        showAstraPoints = true
     }
 }
 

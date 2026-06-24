@@ -17,7 +17,7 @@ struct PointEntry: Identifiable {
 }
 
 @MainActor
-final class LoyaltyViewModel: ObservableObject {
+final class AstraPointsViewModel: ObservableObject {
     @Published var astraPoints = 0
     @Published var history: [PointEntry] = []
 

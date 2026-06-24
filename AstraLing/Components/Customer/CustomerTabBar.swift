@@ -7,20 +7,45 @@
 
 import SwiftUI
 
+enum CustomerTab {
+    case beranda, promo, riwayat, profil
+}
+
 struct CustomerTabBar: View {
+    @Binding var selection: CustomerTab
     let onProfil: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
             Divider()
             HStack(spacing: 0) {
-                CustomerTabBarItem(systemName: "house.fill", label: "Beranda", isActive: true,  action: {})
-                CustomerTabBarItem(systemName: "tag",        label: "Promo",   isActive: false, action: {})
+                CustomerTabBarItem(
+                    systemName: "house.fill",
+                    label: "Beranda",
+                    isActive: selection == .beranda,
+                    action: { selection = .beranda }
+                )
+                CustomerTabBarItem(
+                    systemName: "tag",
+                    label: "Promo",
+                    isActive: selection == .promo,
+                    action: { selection = .promo }
+                )
 
                 Spacer().frame(width: 64)
 
-                CustomerTabBarItem(systemName: "doc.text",  label: "Riwayat", isActive: false, action: {})
-                CustomerTabBarItem(systemName: "person",    label: "Profil",  isActive: false, action: onProfil)
+                CustomerTabBarItem(
+                    systemName: "doc.text",
+                    label: "Riwayat",
+                    isActive: selection == .riwayat,
+                    action: { selection = .riwayat }
+                )
+                CustomerTabBarItem(
+                    systemName: "person",
+                    label: "Profil",
+                    isActive: false,
+                    action: onProfil
+                )
             }
             .padding(.horizontal, 8)
             .frame(height: 56)
