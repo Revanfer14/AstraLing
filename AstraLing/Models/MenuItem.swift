@@ -9,8 +9,9 @@ enum MenuItemStatus: String, Codable {
 struct MenuItem: Identifiable, Codable, Equatable {
     @DocumentID var id: String?
     var name: String
-    var price: Int                       // rupiah
+    var price: Int
     var status: MenuItemStatus = .tersedia
-    var photoUrl: String? = nil          // Cloud Storage download URL
-    var order: Int                       // manual sort order in the list
+    var photoUrl: String? = nil
+    var category: String? = nil
+    var order: Int
 }
