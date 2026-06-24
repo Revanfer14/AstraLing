@@ -64,7 +64,7 @@ struct PaymentView: View {
         }
         .animation(.easeInOut(duration: 0.25), value: phase)
         .onAppear { vm.load(merchantUid: merchantUid) }
-        .fullScreenCover(isPresented: $showLoyalty) { LoyaltyView() }
+        .fullScreenCover(isPresented: $showLoyalty) { AstraPointsView() }
         .alert("Pembayaran Gagal", isPresented: $showError) {
             Button("OK") {}
         } message: {

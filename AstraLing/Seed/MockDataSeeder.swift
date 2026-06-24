@@ -1,12 +1,13 @@
+//
+//  MockDataSeeder.swift
+//  AstraLing
+//
+//  Created by Revan Ferdinand on 24/06/25.
+//
+
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
-
-// MARK: - Mock accounts
-//
-// 2 merchants + 4 customers, all using the same password below.
-// Credentials are printed to the Xcode console when the seeder runs.
-// Trigger: the orange "Seed Mock Data" button visible only in DEBUG builds on the role-selection screen.
 
 @MainActor
 final class MockDataSeeder {
@@ -14,6 +15,11 @@ final class MockDataSeeder {
     static let password = "Astra123!"
 
     private let db = Firestore.firestore()
+
+    private struct SeededAccount {
+        let uid: String
+        let name: String
+    }
 
     func seedAll() async {
         print("""
@@ -24,8 +30,11 @@ final class MockDataSeeder {
         [Seeder] ══════════════════════════════════════
         """)
 
-        let merchantIds = await seedMerchants()
-        await seedCustomers(merchantIds: merchantIds)
+        let merchants = await seedMerchants()
+        let customers = await seedCustomers(merchantIds: merchants.map { $0.uid })
+        await seedPings(customers: customers, merchants: merchants)
+        await seedChats(customers: customers, merchants: merchants)
+        await seedTransactions(customers: customers, merchants: merchants)
 
         try? Auth.auth().signOut()
 
@@ -38,8 +47,6 @@ final class MockDataSeeder {
         """)
     }
 
-    // MARK: - Merchants
-
     private struct MerchantSeed {
         let email, name, category, description: String
         let lat, lng: Double
@@ -47,7 +54,7 @@ final class MockDataSeeder {
         let menu: [(name: String, price: Int, category: String)]
     }
 
-    private func seedMerchants() async -> [String] {
+    private func seedMerchants() async -> [SeededAccount] {
         let seeds: [MerchantSeed] = [
             MerchantSeed(
                 email: "merchant1@astraling.test",
@@ -134,7 +141,7 @@ final class MockDataSeeder {
             )
         ]
 
-        var merchantIds: [String] = []
+        var merchantAccounts: [SeededAccount] = []
         for (i, seed) in seeds.enumerated() {
             guard let uid = await getOrCreate(email: seed.email) else { continue }
 
@@ -166,25 +173,23 @@ final class MockDataSeeder {
                     _ = try menuRef.addDocument(from: menuItem)
                 }
 
-                merchantIds.append(uid)
+                merchantAccounts.append(SeededAccount(uid: uid, name: seed.name))
                 print("[Seeder] ✓ Merchant \(i + 1): \(seed.name)  (\(seed.email))")
             } catch {
                 print("[Seeder] ✗ Failed writing merchant '\(seed.name)': \(error)")
             }
         }
-        return merchantIds
+        return merchantAccounts
     }
-
-    // MARK: - Customers
 
     private struct CustomerSeed {
         let email, name: String
         let lat, lng: Double
         let balance, astraPoints: Int
-        let favoriteIndices: [Int]       // indices into the merchantIds array returned above
+        let favoriteIndices: [Int]
     }
 
-    private func seedCustomers(merchantIds: [String]) async {
+    private func seedCustomers(merchantIds: [String]) async -> [SeededAccount] {
         let seeds: [CustomerSeed] = [
             CustomerSeed(
                 email: "customer1@astraling.test",
@@ -216,6 +221,7 @@ final class MockDataSeeder {
             )
         ]
 
+        var customerAccounts: [SeededAccount] = []
         for (i, seed) in seeds.enumerated() {
             guard let uid = await getOrCreate(email: seed.email) else { continue }
 
@@ -240,17 +246,210 @@ final class MockDataSeeder {
             do {
                 try db.collection("users").document(uid).setData(from: user)
                 try db.collection("customers").document(uid).setData(from: customer)
+                customerAccounts.append(SeededAccount(uid: uid, name: seed.name))
                 print("[Seeder] ✓ Customer \(i + 1): \(seed.name)  (\(seed.email))")
             } catch {
                 print("[Seeder] ✗ Failed writing customer '\(seed.name)': \(error)")
             }
         }
+        return customerAccounts
     }
 
-    // MARK: - Auth helper
+    private func seedPings(customers: [SeededAccount], merchants: [SeededAccount]) async {
+        guard customers.count >= 3, merchants.count >= 2 else { return }
+        let now = Date()
 
-    /// Creates a new Auth user, or signs in as the existing one if the email is already registered.
-    /// Returns the uid on success, nil on failure.
+        let pings: [Ping] = [
+            Ping(
+                customerUid: customers[0].uid,
+                merchantUid: merchants[0].uid,
+                customerName: customers[0].name,
+                customerLocation: GeoPoint(latitude: -6.2097, longitude: 106.8458),
+                interestedItems: ["Bakso Urat", "Bakso Malang Komplit"],
+                note: "Tolong jangan terlalu pedas ya",
+                status: .active,
+                updatedAt: Timestamp(date: now)
+            ),
+            Ping(
+                customerUid: customers[1].uid,
+                merchantUid: merchants[0].uid,
+                customerName: customers[1].name,
+                customerLocation: GeoPoint(latitude: -6.2120, longitude: 106.8435),
+                interestedItems: ["Bakso Biasa"],
+                status: .onTheWay,
+                updatedAt: Timestamp(date: now)
+            ),
+            Ping(
+                customerUid: customers[2].uid,
+                merchantUid: merchants[1].uid,
+                customerName: customers[2].name,
+                customerLocation: GeoPoint(latitude: -6.2065, longitude: 106.8472),
+                interestedItems: ["Manis Coklat Keju", "Telur Kornet"],
+                note: "Minta tidak terlalu manis",
+                status: .active,
+                updatedAt: Timestamp(date: now)
+            )
+        ]
+
+        for ping in pings {
+            do {
+                _ = try db.collection("pings").addDocument(from: ping)
+                let merchantName = merchants.first(where: { $0.uid == ping.merchantUid })?.name ?? ping.merchantUid
+                print("[Seeder] ✓ Ping: \(ping.customerName) → \(merchantName) (\(ping.status.rawValue))")
+            } catch {
+                print("[Seeder] ✗ Failed writing ping: \(error)")
+            }
+        }
+    }
+
+    private func seedChats(customers: [SeededAccount], merchants: [SeededAccount]) async {
+        guard customers.count >= 2, merchants.count >= 2 else { return }
+        let now = Date()
+
+        struct ChatSeed {
+            let customer: SeededAccount
+            let merchant: SeededAccount
+            let messages: [(text: String, role: SenderRole)]
+        }
+
+        let chatSeeds: [ChatSeed] = [
+            ChatSeed(
+                customer: customers[0],
+                merchant: merchants[0],
+                messages: [
+                    ("Halo, saya lagi di sekitar sini, bisa kesini?", .customer),
+                    ("Siap! Saya sedang jalan ke arah sana, 5 menit lagi", .merchant),
+                    ("Oke, saya tunggu di depan minimarket ya", .customer),
+                    ("Sudah dekat, sebentar lagi!", .merchant)
+                ]
+            ),
+            ChatSeed(
+                customer: customers[1],
+                merchant: merchants[1],
+                messages: [
+                    ("Masih ada Martabak Manis Coklat Keju?", .customer),
+                    ("Ada! Mau pesan berapa kotak?", .merchant),
+                    ("1 kotak saja, saya OTW", .customer)
+                ]
+            )
+        ]
+
+        for seed in chatSeeds {
+            let chatId = "\(seed.customer.uid)_\(seed.merchant.uid)"
+            let lastMsg = seed.messages[seed.messages.count - 1]
+            let lastMsgAt = Timestamp(date: now)
+
+            let chat = Chat(
+                customerUid: seed.customer.uid,
+                merchantUid: seed.merchant.uid,
+                participantUids: [seed.customer.uid, seed.merchant.uid],
+                customerName: seed.customer.name,
+                merchantName: seed.merchant.name,
+                lastMessage: lastMsg.text,
+                lastMessageAt: lastMsgAt
+            )
+
+            do {
+                try db.collection("chats").document(chatId).setData(from: chat)
+
+                let messagesRef = db.collection("chats").document(chatId).collection("messages")
+                let total = seed.messages.count
+                for (i, msg) in seed.messages.enumerated() {
+                    let senderUid = msg.role == .customer ? seed.customer.uid : seed.merchant.uid
+                    let offset = Double(i - total) * 60.0
+                    let msgTimestamp = Timestamp(date: Date(timeIntervalSinceNow: offset))
+                    let chatMessage = ChatMessage(
+                        senderUid: senderUid,
+                        senderRole: msg.role,
+                        text: msg.text,
+                        createdAt: msgTimestamp
+                    )
+                    _ = try messagesRef.addDocument(from: chatMessage)
+                }
+
+                print("[Seeder] ✓ Chat: \(seed.customer.name) ↔ \(seed.merchant.name) (\(total) pesan)")
+            } catch {
+                print("[Seeder] ✗ Failed writing chat '\(chatId)': \(error)")
+            }
+        }
+    }
+
+    private func seedTransactions(customers: [SeededAccount], merchants: [SeededAccount]) async {
+        guard customers.count >= 3, merchants.count >= 2 else { return }
+        let now = Date()
+        let calendar = Calendar.current
+
+        func hoursAgo(_ h: Int) -> Timestamp {
+            Timestamp(date: calendar.date(byAdding: .hour, value: -h, to: now) ?? now)
+        }
+
+        let txns: [(txn: Transaction, label: String)] = [
+            (
+                Transaction(
+                    type: .payment,
+                    displayId: "#QR260624-0001",
+                    customerUid: customers[0].uid,
+                    merchantUid: merchants[0].uid,
+                    customerName: customers[0].name,
+                    amount: 22_000,
+                    method: "QRIS AstraPay",
+                    status: .success,
+                    createdAt: hoursAgo(3)
+                ),
+                "\(customers[0].name) → \(merchants[0].name)"
+            ),
+            (
+                Transaction(
+                    type: .payment,
+                    displayId: "#QR260624-0002",
+                    customerUid: customers[1].uid,
+                    merchantUid: merchants[0].uid,
+                    customerName: customers[1].name,
+                    amount: 15_000,
+                    method: "QRIS AstraPay",
+                    status: .success,
+                    createdAt: hoursAgo(2)
+                ),
+                "\(customers[1].name) → \(merchants[0].name)"
+            ),
+            (
+                Transaction(
+                    type: .payment,
+                    displayId: "#QR260624-0003",
+                    customerUid: customers[2].uid,
+                    merchantUid: merchants[1].uid,
+                    customerName: customers[2].name,
+                    amount: 40_000,
+                    method: "QRIS AstraPay",
+                    status: .success,
+                    createdAt: hoursAgo(1)
+                ),
+                "\(customers[2].name) → \(merchants[1].name)"
+            ),
+            (
+                Transaction(
+                    type: .transfer,
+                    displayId: "#TF260624-0001",
+                    merchantUid: merchants[0].uid,
+                    amount: 500_000,
+                    method: "Transfer Bank",
+                    status: .success,
+                    createdAt: hoursAgo(0)
+                ),
+                "Transfer saldo \(merchants[0].name)"
+            )
+        ]
+
+        for (txn, label) in txns {
+            do {
+                _ = try db.collection("transactions").addDocument(from: txn)
+                print("[Seeder] ✓ Transaksi: \(label) — \(txn.displayId)")
+            } catch {
+                print("[Seeder] ✗ Failed writing transaksi '\(txn.displayId)': \(error)")
+            }
+        }
+    }
+
     private func getOrCreate(email: String) async -> String? {
         do {
             let result = try await Auth.auth().createUser(withEmail: email, password: MockDataSeeder.password)
@@ -264,10 +463,6 @@ final class MockDataSeeder {
                 return nil
             }
         } catch let error as NSError {
-            // Print the full error so the underlying API response is visible.
-            // "An internal error has occurred" (code 17999) almost always means
-            // Email/Password sign-in is disabled in the Firebase Console.
-            // Fix: Firebase Console → Authentication → Sign-in method → Email/Password → Enable
             print("[Seeder] ✗ createUser failed for '\(email)'")
             print("          code     : \(error.code)")
             print("          domain   : \(error.domain)")

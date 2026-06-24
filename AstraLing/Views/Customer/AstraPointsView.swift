@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct LoyaltyView: View {
+struct AstraPointsView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = LoyaltyViewModel()
 
@@ -134,5 +134,5 @@ struct LoyaltyView: View {
 }
 
 #Preview {
-    LoyaltyView()
+    AstraPointsView()
 }
