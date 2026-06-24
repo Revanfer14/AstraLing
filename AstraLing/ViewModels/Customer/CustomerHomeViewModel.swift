@@ -26,7 +26,14 @@ final class CustomerHomeViewModel: ObservableObject {
             name         = data["name"]         as? String ?? ""
             balance      = data["balance"]      as? Int    ?? 0
             astraPoints  = data["astraPoints"]  as? Int    ?? 0
-        } catch {
-        }
+        } catch {}
+    }
+
+    func topUp() async {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        let amount = 50_000
+        try? await db.collection("customers").document(uid)
+            .updateData(["balance": FieldValue.increment(Int64(amount))])
+        balance += amount
     }
 }

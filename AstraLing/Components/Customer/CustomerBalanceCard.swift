@@ -11,6 +11,7 @@ struct CustomerBalanceCard: View {
     let balance: Int
     let astraPoints: Int
     let onAstraPoints: () -> Void
+    var onTopUp: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,7 +40,7 @@ struct CustomerBalanceCard: View {
                     .fill(Color.appDivider)
                     .frame(width: 1, height: 44)
 
-                BalanceActionButton(systemName: "plus", label: "Top Up", tint: .Token.gradBlueTop)
+                BalanceActionButton(systemName: "plus", label: "Top Up", tint: .Token.gradBlueTop, action: onTopUp)
                 BalanceActionButton(systemName: "arrow.up.right", label: "Transfer", tint: .Token.gradBlueTop)
             }
             .padding(.horizontal, 16)
@@ -80,9 +81,10 @@ private struct BalanceActionButton: View {
     let systemName: String
     let label: String
     let tint: Color
+    var action: (() -> Void)? = nil
 
     var body: some View {
-        Button(action: {}) {
+        Button(action: { action?() }) {
             VStack(spacing: 4) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)

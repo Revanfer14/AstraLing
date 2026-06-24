@@ -44,7 +44,8 @@ struct AstraPayHomeView: View {
                             CustomerBalanceCard(
                                 balance: homeVM.balance,
                                 astraPoints: homeVM.astraPoints,
-                                onAstraPoints: openAstraPoints
+                                onAstraPoints: openAstraPoints,
+                                onTopUp: { Task { await homeVM.topUp() } }
                             )
                             .padding(.top, -20)
 
