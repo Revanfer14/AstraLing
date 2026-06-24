@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import CoreLocation
 import FirebaseAuth
 import FirebaseFirestore
 
@@ -14,12 +15,14 @@ import FirebaseFirestore
 final class MerchantViewModel: ObservableObject {
     @Published var merchant: Merchant? = nil
     @Published var menuItems: [MenuItem] = []
+    @Published var activePings: [Ping] = []
     @Published var isSaving = false
     @Published var errorMessage: String? = nil
 
     private let db = Firestore.firestore()
     private var profileListener: ListenerRegistration?
     private var menuListener: ListenerRegistration?
+    private var pingsListener: ListenerRegistration?
 
     var uid: String? { Auth.auth().currentUser?.uid }
 
@@ -43,13 +46,41 @@ final class MerchantViewModel: ObservableObject {
                     try? $0.data(as: MenuItem.self)
                 } ?? []
             }
+
+        pingsListener = db.collection("pings")
+            .whereField("merchantUid", isEqualTo: uid)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let self else { return }
+                if let error { self.errorMessage = error.localizedDescription; return }
+                self.activePings = (snapshot?.documents.compactMap {
+                    try? $0.data(as: Ping.self)
+                } ?? []).filter { $0.status == .active || $0.status == .onTheWay }
+            }
     }
 
     func stopListening() {
         profileListener?.remove()
         menuListener?.remove()
+        pingsListener?.remove()
         profileListener = nil
         menuListener = nil
+        pingsListener = nil
+    }
+
+    func setVisible(_ isVisible: Bool) async {
+        guard let uid else { return }
+        try? await db.collection("merchants").document(uid).updateData(["isVisible": isVisible])
+    }
+
+    func updateLocation(_ coordinate: CLLocationCoordinate2D) async {
+        guard let uid else { return }
+        let geopoint = GeoPoint(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        let geohash = Geohash.encode(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        try? await db.collection("merchants").document(uid).updateData([
+            "location": geopoint,
+            "geohash": geohash,
+            "locationUpdatedAt": FieldValue.serverTimestamp()
+        ])
     }
 
     func saveProfile(name: String, description: String, bannerImage: UIImage?) async {

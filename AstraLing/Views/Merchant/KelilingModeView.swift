@@ -7,9 +7,10 @@
 
 import SwiftUI
 import MapKit
+import FirebaseFirestore
 
 private struct PinItem: Identifiable {
-    let id = UUID()
+    let id: String
     let initial: String
     let name: String
     let distanceLabel: String
@@ -36,40 +37,61 @@ struct KelilingModeView: View {
     @EnvironmentObject var authViewModel: AuthViewModel
     @StateObject private var merchantVM = MerchantViewModel()
 
-    @State private var isVisible = true
+    @State private var isVisible = false
+    @State private var isVisibleSynced = false
     @State private var selectedDetent: PresentationDetent = expandedDetent
     @State private var activePing: PinItem? = nil
     @State private var messageText = ""
     @State private var showDashboard = false
     @State private var showEditProfile = false
 
-    private let merchantCenter = CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
-    
+    @StateObject private var location = LocationService()
+    @State private var currentRegion: MKCoordinateRegion = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
+        span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
+    )
+    @State private var pendingRecenter = false
+
     @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
         span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
     ))
 
-    private let allPings: [PinItem] = [
-        PinItem(initial: "E", name: "Erin", distanceLabel: "120 m · 2 menit lalu",
-                color: Color(red: 1, green: 0.478, blue: 0.102),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2058, longitude: 106.8430)),
-        PinItem(initial: "R", name: "Revan", distanceLabel: "240 m · 5 menit lalu",
-                color: Color(red: 0.486, green: 0.227, blue: 0.929),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2095, longitude: 106.8480)),
-        PinItem(initial: "D", name: "Dani", distanceLabel: "320 m · 3 menit lalu",
-                color: Color(red: 0.055, green: 0.647, blue: 0.914),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2115, longitude: 106.8472)),
-        PinItem(initial: "A", name: "Alya", distanceLabel: "380 m · 7 menit lalu",
-                color: Color(red: 0.91, green: 0.271, blue: 0.235),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2118, longitude: 106.8440)),
-        PinItem(initial: "S", name: "Sinta", distanceLabel: "420 m · 4 menit lalu",
-                color: Color(red: 0.486, green: 0.227, blue: 0.929),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2068, longitude: 106.8428)),
-        PinItem(initial: "P", name: "Putri", distanceLabel: "390 m · jalan kaki ± 7 mnt",
-                color: Color(red: 1, green: 0.478, blue: 0.102),
-                coordinate: CLLocationCoordinate2D(latitude: -6.2060, longitude: 106.8462)),
+    private var merchantCoordinate: CLLocationCoordinate2D {
+        guard let loc = merchantVM.merchant?.location else {
+            return CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
+        }
+        return CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
+    }
+
+    private let pinPalette: [Color] = [
+        Color(red: 1, green: 0.478, blue: 0.102),
+        Color(red: 0.486, green: 0.227, blue: 0.929),
+        Color(red: 0.055, green: 0.647, blue: 0.914),
+        Color(red: 0.91, green: 0.271, blue: 0.235),
     ]
+
+    private var livePings: [PinItem] {
+        let origin = CLLocation(latitude: merchantCoordinate.latitude, longitude: merchantCoordinate.longitude)
+        return merchantVM.activePings.enumerated().map { index, ping in
+            let dest = CLLocation(latitude: ping.customerLocation.latitude, longitude: ping.customerLocation.longitude)
+            let meters = origin.distance(from: dest)
+            let label = meters < 1000
+                ? "\(Int(meters)) m"
+                : String(format: "%.1f km", meters / 1000)
+            return PinItem(
+                id: ping.id ?? ping.customerUid,
+                initial: String(ping.customerName.prefix(1)).uppercased(),
+                name: ping.customerName,
+                distanceLabel: label,
+                color: pinPalette[index % pinPalette.count],
+                coordinate: CLLocationCoordinate2D(
+                    latitude: ping.customerLocation.latitude,
+                    longitude: ping.customerLocation.longitude
+                )
+            )
+        }
+    }
 
     private var isMinimized: Bool { selectedDetent == minimizedDetent }
 
@@ -94,8 +116,39 @@ struct KelilingModeView: View {
             }
         }
         .ignoresSafeArea()
-        .onAppear { merchantVM.startListening() }
-        .onDisappear { merchantVM.stopListening() }
+        .onAppear {
+            merchantVM.startListening()
+            location.startUpdating()
+        }
+        .onDisappear {
+            merchantVM.stopListening()
+            location.stopUpdating()
+        }
+        .onChange(of: merchantVM.merchant?.uid) { _, uid in
+            guard uid != nil, !isVisibleSynced, let merchant = merchantVM.merchant else { return }
+            isVisibleSynced = true
+            isVisible = merchant.isVisible
+            let coord = CLLocationCoordinate2D(
+                latitude: merchant.location.latitude,
+                longitude: merchant.location.longitude
+            )
+            let span = MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
+            let region = MKCoordinateRegion(center: coord, span: span)
+            mapPosition = .region(region)
+            currentRegion = region
+        }
+        .onChange(of: location.current) { _, newLocation in
+            guard let newLocation else { return }
+            if pendingRecenter {
+                pendingRecenter = false
+                let newRegion = MKCoordinateRegion(center: newLocation.coordinate, span: currentRegion.span)
+                withAnimation { mapPosition = .region(newRegion) }
+                currentRegion = newRegion
+            }
+            if isVisible {
+                Task { await merchantVM.updateLocation(newLocation.coordinate) }
+            }
+        }
         .sheet(isPresented: $isVisible) {
             Group {
                 if let pin = activePing {
@@ -155,8 +208,8 @@ struct KelilingModeView: View {
             activePing = pin
             if let pin = pin {
                 selectedDetent = minimizedDetent
-                let lats = [merchantCenter.latitude, pin.coordinate.latitude]
-                let lons = [merchantCenter.longitude, pin.coordinate.longitude]
+                let lats = [merchantCoordinate.latitude, pin.coordinate.latitude]
+                let lons = [merchantCoordinate.longitude, pin.coordinate.longitude]
                 let centerLat = (lats.min()! + lats.max()!) / 2
                 let centerLon = (lons.min()! + lons.max()!) / 2
                 let spanLat = max((lats.max()! - lats.min()!) * 3.5, 0.006)
@@ -168,7 +221,7 @@ struct KelilingModeView: View {
             } else {
                 selectedDetent = expandedDetent
                 mapPosition = .region(MKCoordinateRegion(
-                    center: merchantCenter,
+                    center: merchantCoordinate,
                     span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
                 ))
             }
@@ -177,14 +230,15 @@ struct KelilingModeView: View {
 
     private var mapLayer: some View {
         Map(position: $mapPosition) {
+            UserAnnotation()
             if let pin = activePing {
-                MapPolyline(coordinates: [merchantCenter, pin.coordinate])
+                MapPolyline(coordinates: [merchantCoordinate, pin.coordinate])
                     .stroke(
                         Color.appPrimary,
                         style: StrokeStyle(lineWidth: 7, lineCap: .round, dash: [0, 13])
                     )
 
-                Annotation("", coordinate: merchantCenter) {
+                Annotation("", coordinate: merchantCoordinate) {
                     merchantPin
                 }
 
@@ -193,19 +247,19 @@ struct KelilingModeView: View {
                 }
             } else {
                 if isVisible {
-                    MapCircle(center: merchantCenter, radius: 500)
+                    MapCircle(center: merchantCoordinate, radius: 500)
                         .foregroundStyle(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.04))
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.4), lineWidth: 2)
 
-                    MapCircle(center: merchantCenter, radius: 900)
+                    MapCircle(center: merchantCoordinate, radius: 900)
                         .foregroundStyle(.clear)
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.24), lineWidth: 2)
 
-                    MapCircle(center: merchantCenter, radius: 1300)
+                    MapCircle(center: merchantCoordinate, radius: 1300)
                         .foregroundStyle(.clear)
                         .stroke(Color(red: 0.106, green: 0.31, blue: 0.878).opacity(0.12), lineWidth: 2)
 
-                    ForEach(allPings) { pin in
+                    ForEach(livePings) { pin in
                         Annotation("", coordinate: pin.coordinate) {
                             customerPin(pin)
                                 .onTapGesture { setActivePing(pin) }
@@ -213,7 +267,7 @@ struct KelilingModeView: View {
                     }
                 }
 
-                Annotation("", coordinate: merchantCenter) {
+                Annotation("", coordinate: merchantCoordinate) {
                     merchantPin
                         .opacity(isVisible ? 1 : 0.5)
                 }
@@ -221,6 +275,9 @@ struct KelilingModeView: View {
         }
         .mapStyle(.standard(elevation: .flat))
         .mapControls {}
+        .onMapCameraChange(frequency: .continuous) { context in
+            currentRegion = context.region
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -451,9 +508,20 @@ struct KelilingModeView: View {
 
                 Spacer()
 
-                Toggle("", isOn: $isVisible)
-                    .toggleStyle(SwitchToggleStyle(tint: Color.appSuccess))
-                    .labelsHidden()
+                Toggle("", isOn: Binding(
+                    get: { isVisible },
+                    set: { newValue in
+                        isVisible = newValue
+                        Task {
+                            await merchantVM.setVisible(newValue)
+                            if newValue, let current = location.current {
+                                await merchantVM.updateLocation(current.coordinate)
+                            }
+                        }
+                    }
+                ))
+                .toggleStyle(SwitchToggleStyle(tint: Color.appSuccess))
+                .labelsHidden()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
@@ -480,17 +548,17 @@ struct KelilingModeView: View {
 
     private var mapControls: some View {
         VStack(spacing: 10) {
-            mapControlButton("plus")
-            mapControlButton("minus")
-            mapControlButton("location")
+            mapControlButton("plus", action: zoomIn)
+            mapControlButton("minus", action: zoomOut)
+            mapControlButton("location", action: recenterOnUser)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(.trailing, 19)
         .padding(.top, 204)
     }
 
-    private func mapControlButton(_ icon: String) -> some View {
-        Button {} label: {
+    private func mapControlButton(_ icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(Color.white)
@@ -506,6 +574,37 @@ struct KelilingModeView: View {
         }
     }
 
+    private func zoomIn() {
+        let newSpan = MKCoordinateSpan(
+            latitudeDelta: max(currentRegion.span.latitudeDelta * 0.5, 0.001),
+            longitudeDelta: max(currentRegion.span.longitudeDelta * 0.5, 0.001)
+        )
+        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
+        withAnimation { mapPosition = .region(newRegion) }
+        currentRegion = newRegion
+    }
+
+    private func zoomOut() {
+        let newSpan = MKCoordinateSpan(
+            latitudeDelta: min(currentRegion.span.latitudeDelta * 2.0, 1.0),
+            longitudeDelta: min(currentRegion.span.longitudeDelta * 2.0, 1.0)
+        )
+        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
+        withAnimation { mapPosition = .region(newRegion) }
+        currentRegion = newRegion
+    }
+
+    private func recenterOnUser() {
+        location.requestWhenInUse()
+        if let current = location.current {
+            let newRegion = MKCoordinateRegion(center: current.coordinate, span: currentRegion.span)
+            withAnimation { mapPosition = .region(newRegion) }
+            currentRegion = newRegion
+        } else {
+            pendingRecenter = true
+        }
+    }
+
     private var sheetContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Ping dari pelanggan")
@@ -515,7 +614,7 @@ struct KelilingModeView: View {
                 .padding(.top, 28)
 
             HStack(spacing: 8) {
-                Text("\(allPings.count) customer")
+                Text("\(livePings.count) customer")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Color.appTextPrimary)
                 Text("dalam radius 500 m · update barusan")
@@ -528,8 +627,8 @@ struct KelilingModeView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(Array(allPings.enumerated()), id: \.element.id) { index, pin in
-                        pingRow(pin, showDivider: index < allPings.count - 1)
+                    ForEach(Array(livePings.enumerated()), id: \.element.id) { index, pin in
+                        pingRow(pin, showDivider: index < livePings.count - 1)
                     }
                 }
                 .padding(.horizontal, 16)
