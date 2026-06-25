@@ -615,18 +615,7 @@ struct KelilingModeView: View {
     }
 
     private var mapControls: some View {
-        VStack(spacing: 10) {
-            mapControlButton("plus", action: zoomIn)
-            mapControlButton("minus", action: zoomOut)
-            mapControlButton("location", action: recenterOnUser)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-        .padding(.trailing, 19)
-        .padding(.top, 204)
-    }
-
-    private func mapControlButton(_ icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: recenterOnUser) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(Color.white)
@@ -635,31 +624,14 @@ struct KelilingModeView: View {
                         color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06),
                         radius: 6, x: 0, y: 2
                     )
-                Image(systemName: icon)
-                    .foregroundStyle(Color.appTextPrimary)
-                    .font(.system(size: 18, weight: .medium))
+                Image(systemName: "scope")
+                    .foregroundStyle(Color.appPrimary)
+                    .font(.system(size: 20, weight: .medium))
             }
         }
-    }
-
-    private func zoomIn() {
-        let newSpan = MKCoordinateSpan(
-            latitudeDelta: max(currentRegion.span.latitudeDelta * 0.5, 0.001),
-            longitudeDelta: max(currentRegion.span.longitudeDelta * 0.5, 0.001)
-        )
-        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
-        withAnimation { mapPosition = .region(newRegion) }
-        currentRegion = newRegion
-    }
-
-    private func zoomOut() {
-        let newSpan = MKCoordinateSpan(
-            latitudeDelta: min(currentRegion.span.latitudeDelta * 2.0, 1.0),
-            longitudeDelta: min(currentRegion.span.longitudeDelta * 2.0, 1.0)
-        )
-        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
-        withAnimation { mapPosition = .region(newRegion) }
-        currentRegion = newRegion
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .padding(.trailing, 19)
+        .padding(.top, 204)
     }
 
     private func recenterOnUser() {
