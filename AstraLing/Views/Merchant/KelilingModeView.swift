@@ -948,7 +948,7 @@ struct KelilingModeView: View {
                     }
                 }
                 .padding(.horizontal, 18)
-                .padding(.top, 24)
+                .padding(.top, 50)
                 .padding(.bottom, 12)
 
                 HStack(alignment: .top, spacing: 8) {
