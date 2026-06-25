@@ -19,6 +19,16 @@ final class NotificationService: NSObject {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
+    func postPingArrived(customerName: String, pingId: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "Ping Baru"
+        content.body = "\(customerName) menunggu kamu. Ketuk untuk membalas."
+        content.sound = .default
+        content.userInfo = ["type": "ping_arrived", "pingId": pingId]
+        UNUserNotificationCenter.current().add(
+            UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
+    }
+
     func postTransactionArrived(amount: String, customerName: String, txnId: String) {
         let content = UNMutableNotificationContent()
         content.title = "Pembayaran Berhasil"
@@ -44,9 +54,14 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        if response.notification.request.content.userInfo["type"] as? String == "transaction_success" {
-            let txnId = response.notification.request.content.userInfo["txnId"] as? String
-            NotificationCenter.default.post(name: .transactionNotificationTapped, object: txnId)
+        let userInfo = response.notification.request.content.userInfo
+        switch userInfo["type"] as? String {
+        case "transaction_success":
+            NotificationCenter.default.post(name: .transactionNotificationTapped, object: userInfo["txnId"] as? String)
+        case "ping_arrived":
+            NotificationCenter.default.post(name: .pingNotificationTapped, object: userInfo["pingId"] as? String)
+        default:
+            break
         }
         completionHandler()
     }
@@ -54,4 +69,5 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 
 extension Notification.Name {
     static let transactionNotificationTapped = Notification.Name("transactionNotificationTapped")
+    static let pingNotificationTapped = Notification.Name("pingNotificationTapped")
 }
