@@ -12,7 +12,6 @@ struct TransaksiBerhasilView: View {
     @Environment(\.dismiss) private var dismiss
 
     let transaction: Transaction
-    var onComplete: (() -> Void)? = nil
 
     private let greenDark    = Color.appSuccess
     private let greenLight   = Color.appSuccessBg
@@ -170,22 +169,17 @@ struct TransaksiBerhasilView: View {
 
     private var selesaikanButton: some View {
         Button {
-            onComplete?()
             dismiss()
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 16, weight: .bold))
-                Text("Selesaikan Ping")
-                    .font(.system(size: 16, weight: .bold))
-            }
-            .foregroundStyle(Color.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(greenDark)
-            )
+            Text("Kembali")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(Color.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(greenDark)
+                )
         }
     }
 
@@ -194,7 +188,7 @@ struct TransaksiBerhasilView: View {
             Image(systemName: "info.circle")
                 .font(.system(size: 12))
                 .foregroundStyle(greyText)
-            Text("Tandai pesanan \(customerName) sudah selesai")
+            Text("Pembayaran dari \(customerName) telah diterima")
                 .font(.system(size: 12))
                 .foregroundStyle(greyText)
         }

@@ -19,12 +19,12 @@ final class NotificationService: NSObject {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
-    func postTransactionArrived(amount: String, customerName: String) {
+    func postTransactionArrived(amount: String, customerName: String, txnId: String) {
         let content = UNMutableNotificationContent()
         content.title = "Pembayaran Berhasil"
         content.body = "\(amount) dari \(customerName) sudah masuk ke saldo usahamu."
         content.sound = .default
-        content.userInfo = ["type": "transaction_success"]
+        content.userInfo = ["type": "transaction_success", "txnId": txnId]
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
     }
@@ -45,7 +45,8 @@ extension NotificationService: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         if response.notification.request.content.userInfo["type"] as? String == "transaction_success" {
-            NotificationCenter.default.post(name: .transactionNotificationTapped, object: nil)
+            let txnId = response.notification.request.content.userInfo["txnId"] as? String
+            NotificationCenter.default.post(name: .transactionNotificationTapped, object: txnId)
         }
         completionHandler()
     }

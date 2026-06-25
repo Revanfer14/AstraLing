@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MapKit
+import UIKit
 import FirebaseFirestore
 
 private struct PinItem: Identifiable {
@@ -164,6 +165,9 @@ struct KelilingModeView: View {
             merchantVM.stopListening()
             location.stopUpdating()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+            if isVisible { merchantVM.goOfflineBestEffort() }
+        }
         .onChange(of: merchantVM.presence?.merchantUid) { _, uid in
             guard uid != nil, !isVisibleSynced, let presence = merchantVM.presence else { return }
             isVisibleSynced = true
@@ -219,12 +223,9 @@ struct KelilingModeView: View {
             get: { isVisible ? nil : fullScreen },
             set: { fullScreen = $0 }
         )) { fullScreenContent($0) }
-        .onChange(of: merchantVM.newTransaction?.id) { _, newId in
-            guard newId != nil, let txn = merchantVM.newTransaction else { return }
-            fullScreen = .transactionSuccess(txn)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { _ in
-            guard let txn = merchantVM.newTransaction else { return }
+        .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
+            guard let txnId = notification.object as? String,
+                  let txn = merchantVM.transaction(for: txnId) else { return }
             fullScreen = .transactionSuccess(txn)
         }
     }
@@ -241,14 +242,7 @@ struct KelilingModeView: View {
                     .environmentObject(merchantVM)
             }
         case .transactionSuccess(let txn):
-            TransaksiBerhasilView(transaction: txn) {
-                let pingId = txn.pingId
-                    ?? merchantVM.activePings.first(where: { $0.customerUid == txn.customerUid })?.id
-                if let pingId {
-                    Task { await merchantVM.completePing(pingId: pingId) }
-                }
-                setActivePing(nil)
-            }
+            TransaksiBerhasilView(transaction: txn)
         }
     }
 
@@ -623,11 +617,23 @@ struct KelilingModeView: View {
     }
 
     private var mapControls: some View {
-        VStack(spacing: 10) {
-            mapControlButton("plus", action: zoomIn)
-            mapControlButton("minus", action: zoomOut)
-            mapControlButton("location", action: recenterOnUser)
-            #if DEBUG
+          VStack {
+            
+        Button(action: recenterOnUser) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.white)
+                    .frame(width: 46, height: 46)
+                    .shadow(
+                        color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06),
+                        radius: 6, x: 0, y: 2
+                    )
+                Image(systemName: "scope")
+                    .foregroundStyle(Color.appPrimary)
+                    .font(.system(size: 20, weight: .medium))
+            }
+        }
+             #if DEBUG
             Button {
                 debugOffsetEnabled.toggle()
                 if isVisible, let current = location.current {
@@ -648,47 +654,11 @@ struct KelilingModeView: View {
                 }
             }
             #endif
-        }
+          }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(.trailing, 19)
         .padding(.top, 204)
-    }
-
-    private func mapControlButton(_ icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.white)
-                    .frame(width: 46, height: 46)
-                    .shadow(
-                        color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06),
-                        radius: 6, x: 0, y: 2
-                    )
-                Image(systemName: icon)
-                    .foregroundStyle(Color.appTextPrimary)
-                    .font(.system(size: 18, weight: .medium))
-            }
-        }
-    }
-
-    private func zoomIn() {
-        let newSpan = MKCoordinateSpan(
-            latitudeDelta: max(currentRegion.span.latitudeDelta * 0.5, 0.001),
-            longitudeDelta: max(currentRegion.span.longitudeDelta * 0.5, 0.001)
-        )
-        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
-        withAnimation { mapPosition = .region(newRegion) }
-        currentRegion = newRegion
-    }
-
-    private func zoomOut() {
-        let newSpan = MKCoordinateSpan(
-            latitudeDelta: min(currentRegion.span.latitudeDelta * 2.0, 1.0),
-            longitudeDelta: min(currentRegion.span.longitudeDelta * 2.0, 1.0)
-        )
-        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
-        withAnimation { mapPosition = .region(newRegion) }
-        currentRegion = newRegion
+          
     }
 
     private func recenterOnUser() {

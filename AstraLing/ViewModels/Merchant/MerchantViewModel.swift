@@ -19,8 +19,6 @@ final class MerchantViewModel: ObservableObject {
     @Published var activePings: [Ping] = []
     @Published var isSaving = false
     @Published var errorMessage: String? = nil
-    @Published var newTransaction: Transaction? = nil
-
     private let db = Firestore.firestore()
     private var profileListener: ListenerRegistration?
     private var presenceListener: ListenerRegistration?
@@ -29,6 +27,7 @@ final class MerchantViewModel: ObservableObject {
     private var transactionListener: ListenerRegistration?
     private var knownTransactionIds: Set<String> = []
     private var isFirstTransactionLoad = true
+    private var receivedTransactions: [String: Transaction] = [:]
 
     var uid: String? { Auth.auth().currentUser?.uid }
 
@@ -86,10 +85,11 @@ final class MerchantViewModel: ObservableObject {
                     guard !self.knownTransactionIds.contains(docId) else { continue }
                     self.knownTransactionIds.insert(docId)
                     if let txn = try? change.document.data(as: Transaction.self), txn.status == .success, txn.type == .payment {
-                        self.newTransaction = txn
+                        self.receivedTransactions[docId] = txn
                         NotificationService.shared.postTransactionArrived(
                             amount: txn.amount.rupiah,
-                            customerName: txn.customerName ?? "Pelanggan"
+                            customerName: txn.customerName ?? "Pelanggan",
+                            txnId: docId
                         )
                     }
                 }
@@ -109,11 +109,20 @@ final class MerchantViewModel: ObservableObject {
         transactionListener = nil
     }
 
+    func transaction(for id: String) -> Transaction? { receivedTransactions[id] }
+
     func completePing(pingId: String) async {
         try? await db.collection("pings").document(pingId).updateData([
             "status": PingStatus.completed.rawValue,
             "updatedAt": Timestamp(date: Date())
         ])
+    }
+
+    func goOfflineBestEffort() {
+        presenceRef?.setData([
+            "isVisible": false,
+            "locationUpdatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
     }
 
     private var presenceRef: DocumentReference? {

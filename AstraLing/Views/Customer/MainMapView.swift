@@ -215,7 +215,7 @@ struct MainMapView: View {
 
     @MapContentBuilder
     private var routeOverlays: some MapContent {
-        ForEach(Array(vm.routes.keys), id: \.self) { uid in
+        ForEach(vm.routes.keys.sorted(), id: \.self) { uid in
             if let coords = vm.routes[uid], coords.count >= 2 {
                 MapPolyline(coordinates: coords)
                     .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
