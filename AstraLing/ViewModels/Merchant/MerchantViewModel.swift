@@ -116,6 +116,13 @@ final class MerchantViewModel: ObservableObject {
         ])
     }
 
+    func goOfflineBestEffort() {
+        presenceRef?.setData([
+            "isVisible": false,
+            "locationUpdatedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+    }
+
     private var presenceRef: DocumentReference? {
         guard let uid else { return nil }
         return db.collection("merchants").document(uid).collection("presence").document("live")

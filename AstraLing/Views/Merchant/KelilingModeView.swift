@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MapKit
+import UIKit
 import FirebaseFirestore
 
 private struct PinItem: Identifiable {
@@ -151,6 +152,9 @@ struct KelilingModeView: View {
         .onDisappear {
             merchantVM.stopListening()
             location.stopUpdating()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+            if isVisible { merchantVM.goOfflineBestEffort() }
         }
         .onChange(of: merchantVM.presence?.merchantUid) { _, uid in
             guard uid != nil, !isVisibleSynced, let presence = merchantVM.presence else { return }

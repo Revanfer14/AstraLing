@@ -71,8 +71,11 @@ struct MerchantDashboardView: View {
                     .padding(.horizontal, 16)
 
                 Button {
-                    authViewModel.logout()
-                    selectedRoleRaw = ""
+                    Task {
+                        await merchantVM.setVisible(false)
+                        authViewModel.logout()
+                        selectedRoleRaw = ""
+                    }
                 } label: {
                     Text("Keluar Akun")
                         .font(.system(size: 16, weight: .bold))
