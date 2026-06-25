@@ -13,19 +13,19 @@ struct LoginView: View {
     
     @State private var email: String = ""
     @State private var password: String = ""
-    #if DEBUG
+#if DEBUG
     @State private var isSeeding = false
-    #endif
+#endif
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
                 Text("AstraLing")
                     .font(.largeTitle.bold())
-
+                
                 Text("Silakan Login")
                     .foregroundStyle(.secondary)
-
+                
                 VStack(spacing: 16) {
                     TextField("Email", text: $email)
                         .padding()
@@ -34,19 +34,19 @@ struct LoginView: View {
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-
+                    
                     SecureField("Password", text: $password)
                         .padding()
                         .background(Color(.systemGray6))
                         .cornerRadius(8)
-
+                    
                     if let errorMessage = authVM.errorMessage {
                         Text(errorMessage)
                             .font(.footnote)
                             .foregroundStyle(.red)
                             .multilineTextAlignment(.center)
                     }
-
+                    
                     Button {
                         Task {
                             if let role = await authVM.login(email: email, password: password) {
@@ -72,7 +72,7 @@ struct LoginView: View {
                     .cornerRadius(12)
                     .padding(.top, 8)
                     .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
-
+                    
                     NavigationLink(destination: RegisterView(selectedRoleRaw: $selectedRoleRaw)) {
                         Text("Belum punya akun? ")
                             .foregroundStyle(.secondary)
@@ -89,8 +89,8 @@ struct LoginView: View {
                 .cornerRadius(12)
                 .padding(.top, 8)
                 .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
-
-                #if DEBUG
+                
+#if DEBUG
                 Button {
                     isSeeding = true
                     Task {
@@ -116,9 +116,9 @@ struct LoginView: View {
                         .stroke(Color.blue.opacity(0.5), lineWidth: 1.5)
                 )
                 .disabled(isSeeding)
-                #endif
-                .padding(.horizontal, 24)
+#endif
             }
+            .padding(.horizontal, 24)
         }
     }
 }
