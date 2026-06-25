@@ -67,6 +67,9 @@ struct KelilingModeView: View {
     )
     @State private var pendingRecenter = false
     @State private var highlightedPingId: String? = nil
+    #if DEBUG
+    @State private var debugOffsetEnabled = false
+    #endif
 
     @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
@@ -78,6 +81,15 @@ struct KelilingModeView: View {
             return CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456)
         }
         return CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
+    }
+
+    private func resolvedCoordinate(_ coord: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
+        #if DEBUG
+        guard debugOffsetEnabled else { return coord }
+        return CLLocationCoordinate2D(latitude: coord.latitude + 0.004, longitude: coord.longitude)
+        #else
+        return coord
+        #endif
     }
 
     private let radarRadii: [Double] = [200, 400, 600]
@@ -174,7 +186,7 @@ struct KelilingModeView: View {
                 currentRegion = newRegion
             }
             if isVisible {
-                Task { await merchantVM.updateLocation(newLocation.coordinate) }
+                Task { await merchantVM.updateLocation(resolvedCoordinate(newLocation.coordinate)) }
             }
         }
         .sheet(isPresented: $isVisible) {
@@ -579,7 +591,7 @@ struct KelilingModeView: View {
                         Task {
                             await merchantVM.setVisible(newValue)
                             if newValue, let current = location.current {
-                                await merchantVM.updateLocation(current.coordinate)
+                                await merchantVM.updateLocation(resolvedCoordinate(current.coordinate))
                             }
                         }
                     }
@@ -615,6 +627,27 @@ struct KelilingModeView: View {
             mapControlButton("plus", action: zoomIn)
             mapControlButton("minus", action: zoomOut)
             mapControlButton("location", action: recenterOnUser)
+            #if DEBUG
+            Button {
+                debugOffsetEnabled.toggle()
+                if isVisible, let current = location.current {
+                    Task { await merchantVM.updateLocation(resolvedCoordinate(current.coordinate)) }
+                }
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(debugOffsetEnabled ? Color.appPrimary : Color.white)
+                        .frame(width: 46, height: 46)
+                        .shadow(
+                            color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06),
+                            radius: 6, x: 0, y: 2
+                        )
+                    Image(systemName: "mappin.and.ellipse")
+                        .foregroundStyle(debugOffsetEnabled ? Color.white : Color.appTextPrimary)
+                        .font(.system(size: 18, weight: .medium))
+                }
+            }
+            #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         .padding(.trailing, 19)
