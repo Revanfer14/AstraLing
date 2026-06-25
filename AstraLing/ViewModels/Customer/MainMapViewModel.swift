@@ -40,6 +40,7 @@ final class MainMapViewModel: ObservableObject {
     @Published var routes: [String: [CLLocationCoordinate2D]] = [:]
 
     private let db = Firestore.firestore()
+    private let radarRadiusMeters: Double = 1000
     private var listener: ListenerRegistration?
     private var pingsListener: ListenerRegistration?
     private var rawMerchants: [Merchant] = []
@@ -279,6 +280,8 @@ final class MainMapViewModel: ObservableObject {
     }
 
     private func rebuild() {
+        let pingedUids = Set(rawPings.map(\.merchantUid))
+            .union(activePings.map(\.merchantUid))
         merchants = rawPresence.compactMap { presence in
             guard let loc = presence.location else { return nil }
             let coord = CLLocationCoordinate2D(latitude: loc.latitude, longitude: loc.longitude)
@@ -297,6 +300,11 @@ final class MainMapViewModel: ObservableObject {
                 walkLabel: walkLabel,
                 bannerUrl: presence.bannerUrl
             )
+        }
+        .filter { merchant in
+            if pingedUids.contains(merchant.id) { return true }
+            guard let d = merchant.distanceMeters else { return false }
+            return d <= radarRadiusMeters
         }
         .sorted {
             switch ($0.distanceMeters, $1.distanceMeters) {
