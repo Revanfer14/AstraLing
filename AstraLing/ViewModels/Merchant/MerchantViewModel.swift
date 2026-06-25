@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 import CoreLocation
+import MapKit
 import FirebaseAuth
 import FirebaseFirestore
 
@@ -19,6 +20,7 @@ final class MerchantViewModel: ObservableObject {
     @Published var activePings: [Ping] = []
     @Published var isSaving = false
     @Published var errorMessage: String? = nil
+    @Published var activeRoute: [CLLocationCoordinate2D] = []
     private let db = Firestore.firestore()
     private var profileListener: ListenerRegistration?
     private var presenceListener: ListenerRegistration?
@@ -28,6 +30,9 @@ final class MerchantViewModel: ObservableObject {
     private var knownTransactionIds: Set<String> = []
     private var isFirstTransactionLoad = true
     private var receivedTransactions: [String: Transaction] = [:]
+    private var lastRoutedMerchantLocation: CLLocation?
+    private var lastRoutedCustomerCoord: CLLocationCoordinate2D?
+    private let routeRefreshThresholdMeters: Double = 30
 
     var uid: String? { Auth.auth().currentUser?.uid }
 
@@ -94,6 +99,42 @@ final class MerchantViewModel: ObservableObject {
                     }
                 }
             }
+    }
+
+    func updateRoute(merchantCoord: CLLocationCoordinate2D, customerCoord: CLLocationCoordinate2D) {
+        let merchantLoc = CLLocation(latitude: merchantCoord.latitude, longitude: merchantCoord.longitude)
+        let merchantMoved = lastRoutedMerchantLocation.map {
+            merchantLoc.distance(from: $0) > routeRefreshThresholdMeters
+        } ?? true
+        let customerMoved: Bool = {
+            guard let last = lastRoutedCustomerCoord else { return true }
+            let a = CLLocation(latitude: last.latitude, longitude: last.longitude)
+            let b = CLLocation(latitude: customerCoord.latitude, longitude: customerCoord.longitude)
+            return a.distance(from: b) > routeRefreshThresholdMeters
+        }()
+        guard activeRoute.isEmpty || merchantMoved || customerMoved else { return }
+        lastRoutedMerchantLocation = merchantLoc
+        lastRoutedCustomerCoord = customerCoord
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoord))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: customerCoord))
+        request.transportType = .walking
+        MKDirections(request: request).calculate { [weak self] response, _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                if let polyline = response?.routes.first?.polyline {
+                    self.activeRoute = polyline.coordinates
+                } else {
+                    self.activeRoute = [merchantCoord, customerCoord]
+                }
+            }
+        }
+    }
+
+    func clearRoute() {
+        activeRoute = []
+        lastRoutedMerchantLocation = nil
+        lastRoutedCustomerCoord = nil
     }
 
     func stopListening() {

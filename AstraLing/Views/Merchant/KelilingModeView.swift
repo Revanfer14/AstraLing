@@ -180,6 +180,9 @@ struct KelilingModeView: View {
             if isVisible {
                 Task { await merchantVM.updateLocation(newLocation.coordinate) }
             }
+            if let pin = activePing {
+                merchantVM.updateRoute(merchantCoord: merchantCoordinate, customerCoord: pin.coordinate)
+            }
         }
         .sheet(isPresented: $isVisible) {
             Group {
@@ -236,8 +239,10 @@ struct KelilingModeView: View {
 
     private func setActivePing(_ pin: PinItem?) {
         highlightedPingId = nil
+        merchantVM.clearRoute()
         if let pin = pin {
             chatVM.start(customerUid: pin.customerUid)
+            merchantVM.updateRoute(merchantCoord: merchantCoordinate, customerCoord: pin.coordinate)
         } else {
             chatVM.stop()
         }
@@ -266,14 +271,15 @@ struct KelilingModeView: View {
     }
 
     private var mapLayer: some View {
-        Map(position: $mapPosition) {
+        let routeCoords: [CLLocationCoordinate2D] = {
+            guard let pin = activePing else { return [] }
+            return merchantVM.activeRoute.count >= 2 ? merchantVM.activeRoute : [merchantCoordinate, pin.coordinate]
+        }()
+        return Map(position: $mapPosition) {
             UserAnnotation()
             if let pin = activePing {
-                MapPolyline(coordinates: [merchantCoordinate, pin.coordinate])
-                    .stroke(
-                        Color.appPrimary,
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round, dash: [0, 13])
-                    )
+                MapPolyline(coordinates: routeCoords.count >= 2 ? routeCoords : [merchantCoordinate, pin.coordinate])
+                    .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
 
                 Annotation("", coordinate: merchantCoordinate) {
                     merchantPin
