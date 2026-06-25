@@ -66,6 +66,7 @@ struct KelilingModeView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.009, longitudeDelta: 0.009)
     )
     @State private var pendingRecenter = false
+    @State private var highlightedPingId: String? = nil
 
     @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: -6.2088, longitude: 106.8456),
@@ -112,6 +113,15 @@ struct KelilingModeView: View {
     }
 
     private var isMinimized: Bool { selectedDetent == minimizedDetent }
+
+    private var orderedPings: [PinItem] {
+        guard let hId = highlightedPingId,
+              let idx = livePings.firstIndex(where: { $0.id == hId }) else { return livePings }
+        var sorted = livePings
+        let highlighted = sorted.remove(at: idx)
+        sorted.insert(highlighted, at: 0)
+        return sorted
+    }
 
     var body: some View {
         ZStack {
@@ -231,6 +241,7 @@ struct KelilingModeView: View {
     }
 
     private func setActivePing(_ pin: PinItem?) {
+        highlightedPingId = nil
         if let pin = pin {
             chatVM.start(customerUid: pin.customerUid)
         } else {
@@ -303,7 +314,10 @@ struct KelilingModeView: View {
                     ForEach(livePings) { pin in
                         Annotation("", coordinate: pin.coordinate) {
                             customerPin(pin)
-                                .onTapGesture { setActivePing(pin) }
+                                .onTapGesture {
+                                    highlightedPingId = pin.id
+                                    selectedDetent = expandedDetent
+                                }
                         }
                     }
                 }
@@ -677,8 +691,12 @@ struct KelilingModeView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(Array(livePings.enumerated()), id: \.element.id) { index, pin in
-                        pingRow(pin, showDivider: index < livePings.count - 1)
+                    ForEach(Array(orderedPings.enumerated()), id: \.element.id) { index, pin in
+                        pingRow(
+                            pin,
+                            showDivider: index < orderedPings.count - 1,
+                            isHighlighted: pin.id == highlightedPingId
+                        )
                     }
                 }
                 .padding(.horizontal, 16)
@@ -689,54 +707,81 @@ struct KelilingModeView: View {
     }
 
     @ViewBuilder
-    private func pingRow(_ pin: PinItem, showDivider: Bool) -> some View {
+    private func pingRow(_ pin: PinItem, showDivider: Bool, isHighlighted: Bool = false) -> some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 11)
-                        .fill(Color.appDivider)
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "person.fill")
-                        .foregroundStyle(Color.appTextTertiary)
-                        .font(.system(size: 22))
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(pin.name)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.appTextPrimary)
-
+            VStack(spacing: 0) {
+                if isHighlighted {
                     HStack(spacing: 5) {
-                        Image(systemName: "location.fill")
+                        Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 10))
-                            .foregroundStyle(Color(red: 0.098, green: 0.702, blue: 0.42))
-                        Text(pin.distanceLabel)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color(red: 0.098, green: 0.702, blue: 0.42))
+                            .foregroundStyle(Color.appPrimary)
+                        Text("Dipilih dari peta")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.appPrimary)
+                        Spacer()
                     }
+                    .padding(.bottom, 6)
                 }
 
-                Spacer()
-
-                Button {
-                    if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
-                        Task { await merchantVM.accept(ping) }
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(isHighlighted ? Color.appPrimary.opacity(0.12) : Color.appDivider)
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(isHighlighted ? Color.appPrimary : Color.appTextTertiary)
+                            .font(.system(size: 22))
                     }
-                    setActivePing(pin)
-                } label: {
-                    Text("Terima Ping")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 97, height: 34)
-                        .background(
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(pin.name)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(Color.appTextPrimary)
+
+                        HStack(spacing: 5) {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(Color(red: 0.098, green: 0.702, blue: 0.42))
+                            Text(pin.distanceLabel)
+                                .font(.system(size: 12))
+                                .foregroundStyle(Color(red: 0.098, green: 0.702, blue: 0.42))
+                        }
+                    }
+
+                    Spacer()
+
+                    Button {
+                        if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
+                            Task { await merchantVM.accept(ping) }
+                        }
+                        setActivePing(pin)
+                    } label: {
+                        Text("Terima Ping")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 97, height: 34)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(Color.appPrimary)
+                            )
+                    }
+                }
+            }
+            .padding(isHighlighted ? 12 : 0)
+            .padding(.vertical, isHighlighted ? 0 : 11)
+            .background {
+                if isHighlighted {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.appSurfaceBlue)
+                        .overlay(
                             RoundedRectangle(cornerRadius: 14)
-                                .fill(Color.appPrimary)
+                                .stroke(Color.appPrimary.opacity(0.25), lineWidth: 1)
                         )
                 }
             }
-            .padding(.vertical, 11)
+            .padding(.vertical, isHighlighted ? 4 : 0)
 
-            if showDivider {
+            if showDivider && !isHighlighted {
                 Rectangle()
                     .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
                     .frame(height: 1)
