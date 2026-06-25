@@ -211,12 +211,9 @@ struct KelilingModeView: View {
             get: { isVisible ? nil : fullScreen },
             set: { fullScreen = $0 }
         )) { fullScreenContent($0) }
-        .onChange(of: merchantVM.newTransaction?.id) { _, newId in
-            guard newId != nil, let txn = merchantVM.newTransaction else { return }
-            fullScreen = .transactionSuccess(txn)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { _ in
-            guard let txn = merchantVM.newTransaction else { return }
+        .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
+            guard let txnId = notification.object as? String,
+                  let txn = merchantVM.transaction(for: txnId) else { return }
             fullScreen = .transactionSuccess(txn)
         }
     }
@@ -233,14 +230,7 @@ struct KelilingModeView: View {
                     .environmentObject(merchantVM)
             }
         case .transactionSuccess(let txn):
-            TransaksiBerhasilView(transaction: txn) {
-                let pingId = txn.pingId
-                    ?? merchantVM.activePings.first(where: { $0.customerUid == txn.customerUid })?.id
-                if let pingId {
-                    Task { await merchantVM.completePing(pingId: pingId) }
-                }
-                setActivePing(nil)
-            }
+            TransaksiBerhasilView(transaction: txn)
         }
     }
 
