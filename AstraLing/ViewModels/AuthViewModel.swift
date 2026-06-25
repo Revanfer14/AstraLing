@@ -47,6 +47,48 @@ class AuthViewModel: ObservableObject {
         return role
     }
     
+    func register(name: String, email: String, password: String, role: AppRole) async -> String? {
+        isLoading = true
+        errorMessage = nil
+        do {
+            let result = try await Auth.auth().createUser(withEmail: email, password: password)
+            let uid = result.user.uid
+            let now = Timestamp(date: Date())
+            let jakarta = GeoPoint(latitude: -6.2088, longitude: 106.8456)
+            let geohash = Geohash.encode(latitude: -6.2088, longitude: 106.8456)
+
+            try db.collection("users").document(uid).setData(from: AppUser(role: role))
+
+            switch role {
+            case .customer:
+                let customer = Customer(
+                    name: name, email: email, balance: 250_000, astraPoints: 0,
+                    location: jakarta, geohash: geohash,
+                    locationUpdatedAt: now, favorites: [])
+                try db.collection("customers").document(uid).setData(from: customer)
+            case .merchant:
+                let merchant = Merchant(
+                    name: name, email: email, balance: 0, astraPoints: 0,
+                    category: "lainnya", qrPayload: "astraling://pay/\(uid)")
+                try db.collection("merchants").document(uid).setData(from: merchant)
+                let presence: [String: Any] = [
+                    "merchantUid": uid, "name": name, "category": "lainnya",
+                    "isVisible": false, "location": jakarta,
+                    "geohash": geohash, "locationUpdatedAt": now
+                ]
+                try await db.collection("merchants").document(uid)
+                    .collection("presence").document("live").setData(presence)
+            }
+
+            isLoading = false
+            return role.rawValue
+        } catch {
+            isLoading = false
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
     func logout() {
         do {
             try Auth.auth().signOut()
