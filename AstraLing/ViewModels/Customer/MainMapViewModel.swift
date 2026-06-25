@@ -50,7 +50,9 @@ final class MainMapViewModel: ObservableObject {
     private var lastWrittenLocation: CLLocation?
     private var customerName: String = ""
     private var lastPingId: String?
-    private var routedKey: String = ""
+    private var lastRoutedUserLocation: CLLocation?
+    private var lastRoutedMerchantCoords: [String: CLLocationCoordinate2D] = [:]
+    private let routeRefreshThresholdMeters: Double = 30
 
     func start() {
         Task {
@@ -63,12 +65,7 @@ final class MainMapViewModel: ObservableObject {
     func setUserLocation(_ loc: CLLocation?) {
         userLocation = loc
         rebuild()
-        if let loc {
-            pushLocation(loc)
-            routes = [:]
-            routedKey = ""
-            recomputeRoutes()
-        }
+        if let loc { pushLocation(loc) }
     }
 
     func stop() {
@@ -181,19 +178,34 @@ final class MainMapViewModel: ObservableObject {
         guard let userLoc = userLocation else { return }
         let userCoord = userLoc.coordinate
         let onTheWayPings = activePings.filter { $0.status == .onTheWay }
-        let newKey = onTheWayPings.map(\.merchantUid).sorted().joined(separator: ",")
-        guard newKey != routedKey else { return }
-        routedKey = newKey
         let activeUids = Set(onTheWayPings.map(\.merchantUid))
-        routes = routes.filter { activeUids.contains($0.key) }
+
+        if routes.keys.contains(where: { !activeUids.contains($0) }) {
+            routes = routes.filter { activeUids.contains($0.key) }
+        }
+        lastRoutedMerchantCoords = lastRoutedMerchantCoords.filter { activeUids.contains($0.key) }
+
+        let userMoved = lastRoutedUserLocation.map {
+            userLoc.distance(from: $0) > routeRefreshThresholdMeters
+        } ?? true
+
         for ping in onTheWayPings {
             guard let merchant = merchants.first(where: { $0.id == ping.merchantUid }) else { continue }
             let merchantCoord = merchant.coordinate
+            let uid = ping.merchantUid
+            let merchantMoved: Bool = {
+                guard let last = lastRoutedMerchantCoords[uid] else { return true }
+                let a = CLLocation(latitude: last.latitude, longitude: last.longitude)
+                let b = CLLocation(latitude: merchantCoord.latitude, longitude: merchantCoord.longitude)
+                return a.distance(from: b) > routeRefreshThresholdMeters
+            }()
+            guard routes[uid] == nil || userMoved || merchantMoved else { continue }
+
+            lastRoutedMerchantCoords[uid] = merchantCoord
             let request = MKDirections.Request()
             request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoord))
             request.destination = MKMapItem(placemark: MKPlacemark(coordinate: userCoord))
             request.transportType = .walking
-            let uid = ping.merchantUid
             MKDirections(request: request).calculate { [weak self] response, _ in
                 Task { @MainActor [weak self] in
                     guard let self else { return }
@@ -205,6 +217,7 @@ final class MainMapViewModel: ObservableObject {
                 }
             }
         }
+        if userMoved { lastRoutedUserLocation = userLoc }
     }
 
     func cancelPing(pingId: String? = nil) {
