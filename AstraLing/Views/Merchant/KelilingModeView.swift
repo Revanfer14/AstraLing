@@ -16,8 +16,12 @@ private struct PinItem: Identifiable {
     let initial: String
     let name: String
     let distanceLabel: String
+    let walkMinutes: Int
     let color: Color
     let coordinate: CLLocationCoordinate2D
+    let status: PingStatus
+    let acceptedAt: Date
+    let note: String?
 }
 
 private struct DownTriangle: Shape {
@@ -28,6 +32,60 @@ private struct DownTriangle: Shape {
             p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
             p.closeSubpath()
         }
+    }
+}
+
+private struct SlideToCompleteButton: View {
+    let onComplete: () -> Void
+    @State private var dragOffset: CGFloat = 0
+    private let knobSize: CGFloat = 44
+    private let trackHeight: CGFloat = 52
+
+    var body: some View {
+        GeometryReader { geo in
+            let trackWidth = geo.size.width
+            let maxDrag = trackWidth - knobSize - 8
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.appSuccessBg)
+                    .frame(height: trackHeight)
+
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.appSuccess.opacity(0.18))
+                    .frame(width: knobSize + 8 + dragOffset, height: trackHeight)
+
+                Text("Geser untuk Selesaikan Ping")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.appSuccess)
+                    .frame(maxWidth: .infinity)
+                    .opacity(dragOffset < maxDrag * 0.5 ? 1 : 1 - (dragOffset - maxDrag * 0.5) / (maxDrag * 0.5))
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 11)
+                        .fill(Color.appSuccess)
+                        .shadow(color: Color.appSuccess.opacity(0.4), radius: 6, x: 0, y: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: knobSize, height: knobSize)
+                .offset(x: 4 + dragOffset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            dragOffset = min(max(0, value.translation.width), maxDrag)
+                        }
+                        .onEnded { _ in
+                            if dragOffset >= maxDrag * 0.7 {
+                                onComplete()
+                            }
+                            withAnimation(.spring()) { dragOffset = 0 }
+                        }
+                )
+            }
+            .frame(height: trackHeight)
+        }
+        .frame(height: trackHeight)
     }
 }
 
@@ -92,23 +150,29 @@ struct KelilingModeView: View {
 
     private var livePings: [PinItem] {
         let origin = CLLocation(latitude: merchantCoordinate.latitude, longitude: merchantCoordinate.longitude)
-        return merchantVM.activePings.enumerated().map { index, ping in
+        return merchantVM.activePings.map { ping in
             let dest = CLLocation(latitude: ping.customerLocation.latitude, longitude: ping.customerLocation.longitude)
             let meters = origin.distance(from: dest)
             let label = meters < 1000
                 ? "\(Int(meters)) m"
                 : String(format: "%.1f km", meters / 1000)
+            let walk = max(1, Int((meters / 80).rounded()))
+            let colorIndex = abs(ping.customerUid.hashValue) % pinPalette.count
             return PinItem(
                 id: ping.id ?? ping.customerUid,
                 customerUid: ping.customerUid,
                 initial: String(ping.customerName.prefix(1)).uppercased(),
                 name: ping.customerName,
                 distanceLabel: label,
-                color: pinPalette[index % pinPalette.count],
+                walkMinutes: walk,
+                color: pinPalette[colorIndex],
                 coordinate: CLLocationCoordinate2D(
                     latitude: ping.customerLocation.latitude,
                     longitude: ping.customerLocation.longitude
-                )
+                ),
+                status: ping.status,
+                acceptedAt: ping.updatedAt.dateValue(),
+                note: ping.note
             )
         }
     }
@@ -116,12 +180,14 @@ struct KelilingModeView: View {
     private var isMinimized: Bool { selectedDetent == minimizedDetent }
 
     private var orderedPings: [PinItem] {
-        guard let hId = highlightedPingId,
-              let idx = livePings.firstIndex(where: { $0.id == hId }) else { return livePings }
-        var sorted = livePings
-        let highlighted = sorted.remove(at: idx)
-        sorted.insert(highlighted, at: 0)
-        return sorted
+        let accepted = livePings.filter { $0.status == .onTheWay }
+            .sorted { $0.acceptedAt < $1.acceptedAt }
+        var pending = livePings.filter { $0.status == .active }
+        if let hId = highlightedPingId,
+           let idx = pending.firstIndex(where: { $0.id == hId }) {
+            pending.insert(pending.remove(at: idx), at: 0)
+        }
+        return accepted + pending
     }
 
     var body: some View {
@@ -218,6 +284,12 @@ struct KelilingModeView: View {
             guard let txnId = notification.object as? String,
                   let txn = merchantVM.transaction(for: txnId) else { return }
             fullScreen = .transactionSuccess(txn)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pingNotificationTapped)) { notification in
+            guard let pingId = notification.object as? String else { return }
+            setActivePing(nil)
+            highlightedPingId = pingId
+            selectedDetent = expandedDetent
         }
     }
     
@@ -680,9 +752,21 @@ struct KelilingModeView: View {
 
     @ViewBuilder
     private func pingRow(_ pin: PinItem, showDivider: Bool, isHighlighted: Bool = false) -> some View {
+        let isAccepted = pin.status == .onTheWay
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                if isHighlighted {
+                if isAccepted {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.appSuccess)
+                            .frame(width: 6, height: 6)
+                        Text("Diterima · OTW")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color.appSuccess)
+                        Spacer()
+                    }
+                    .padding(.bottom, 6)
+                } else if isHighlighted {
                     HStack(spacing: 5) {
                         Image(systemName: "mappin.circle.fill")
                             .font(.system(size: 10))
@@ -698,10 +782,14 @@ struct KelilingModeView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 11)
-                            .fill(isHighlighted ? Color.appPrimary.opacity(0.12) : Color.appDivider)
+                            .fill(isAccepted
+                                ? Color.appSuccess.opacity(0.12)
+                                : isHighlighted ? Color.appPrimary.opacity(0.12) : Color.appDivider)
                             .frame(width: 44, height: 44)
                         Image(systemName: "person.fill")
-                            .foregroundStyle(isHighlighted ? Color.appPrimary : Color.appTextTertiary)
+                            .foregroundStyle(isAccepted
+                                ? Color.appSuccess
+                                : isHighlighted ? Color.appPrimary : Color.appTextTertiary)
                             .font(.system(size: 22))
                     }
 
@@ -722,27 +810,49 @@ struct KelilingModeView: View {
 
                     Spacer()
 
-                    Button {
-                        if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
-                            Task { await merchantVM.accept(ping) }
+                    if isAccepted {
+                        Button {
+                            setActivePing(pin)
+                        } label: {
+                            Text("Buka Chat")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Color.appPrimary)
+                                .frame(width: 97, height: 34)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(Color.appSurfaceBlue)
+                                )
                         }
-                        setActivePing(pin)
-                    } label: {
-                        Text("Terima Ping")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 97, height: 34)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .fill(Color.appPrimary)
-                            )
+                    } else {
+                        Button {
+                            if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
+                                Task { await merchantVM.accept(ping) }
+                            }
+                            setActivePing(pin)
+                        } label: {
+                            Text("Terima Ping")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 97, height: 34)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .fill(Color.appPrimary)
+                                )
+                        }
                     }
                 }
             }
-            .padding(isHighlighted ? 12 : 0)
-            .padding(.vertical, isHighlighted ? 0 : 11)
+            .padding(isAccepted || isHighlighted ? 12 : 0)
+            .padding(.vertical, isAccepted || isHighlighted ? 0 : 11)
             .background {
-                if isHighlighted {
+                if isAccepted {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.appSuccess.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.appSuccess.opacity(0.2), lineWidth: 1)
+                        )
+                } else if isHighlighted {
                     RoundedRectangle(cornerRadius: 14)
                         .fill(Color.appSurfaceBlue)
                         .overlay(
@@ -751,9 +861,9 @@ struct KelilingModeView: View {
                         )
                 }
             }
-            .padding(.vertical, isHighlighted ? 4 : 0)
+            .padding(.vertical, isAccepted || isHighlighted ? 4 : 0)
 
-            if showDivider && !isHighlighted {
+            if showDivider && !isAccepted && !isHighlighted {
                 Rectangle()
                     .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
                     .frame(height: 1)
@@ -763,31 +873,81 @@ struct KelilingModeView: View {
     
     private func chatSheetContent(for pin: PinItem) -> some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.appPrimary)
-                        .frame(width: 48, height: 48)
-                    Text(pin.initial)
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white)
-                }
+            VStack(spacing: 0) {
+                HStack(spacing: 11) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(red: 0.918, green: 0.929, blue: 0.953))
+                            .frame(width: 42, height: 42)
+                        Image(systemName: "person.fill")
+                            .foregroundStyle(Color.appTextTertiary)
+                            .font(.system(size: 20))
+                    }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(pin.name)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.appTextPrimary)
-                    if !pin.distanceLabel.isEmpty {
-                        Text("Menunggu kamu · \(pin.distanceLabel)")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.appSuccess)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(pin.name)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Color.appTextPrimary)
+                        HStack(spacing: 5) {
+                            Circle()
+                                .fill(Color.appSuccess)
+                                .frame(width: 6, height: 6)
+                            Text("Menunggu kamu")
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(Color.appSuccess)
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("± \(pin.walkMinutes) mnt")
+                            .font(.system(size: 12.5, weight: .bold))
+                            .foregroundStyle(Color.appTextPrimary)
+                        Text(pin.distanceLabel)
+                            .font(.system(size: 9.5))
+                            .foregroundStyle(Color.appTextTertiary)
                     }
                 }
+                .padding(.horizontal, 18)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
 
-                Spacer()
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.appTextTertiary)
+                        .padding(.top, 2)
+                    Text(pin.note ?? "Lokasi pelanggan")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(Color.appTextTertiary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button {
+                        let coord = CLLocationCoordinate2D(
+                            latitude: pin.coordinate.latitude,
+                            longitude: pin.coordinate.longitude
+                        )
+                        let item = MKMapItem(placemark: MKPlacemark(coordinate: coord))
+                        item.name = pin.name
+                        item.openInMaps()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "paperplane.fill")
+                                .font(.system(size: 10))
+                            Text("Navigasi")
+                                .font(.system(size: 10.5, weight: .bold))
+                        }
+                        .foregroundStyle(Color.appPrimary)
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 12)
+
+                Rectangle()
+                    .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
+                    .frame(height: 1)
             }
-            .padding(12)
-            .padding(.top, 24)
 
             if selectedDetent != minimizedDetent {
                 ScrollViewReader { proxy in
@@ -820,7 +980,7 @@ struct KelilingModeView: View {
                         .padding(.horizontal, 18)
                         .padding(.bottom, 16)
                     }
-                    .background(Color.appSurfaceBlue)
+                    .background(Color(red: 0.965, green: 0.969, blue: 0.976))
                     .onChange(of: chatVM.messages.count) { _, _ in
                         if let last = chatVM.messages.last {
                             withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -828,54 +988,57 @@ struct KelilingModeView: View {
                     }
                 }
 
-                VStack(spacing: 11) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            Button { chatVM.send("Sudah sampai") } label: { quickReplyChip("Sudah sampai") }
-                            Button { chatVM.send("Sebentar lagi") } label: { quickReplyChip("Sebentar lagi") }
-                            Button { chatVM.send("Pesanan siap") } label: { quickReplyChip("Pesanan siap") }
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
+                        .frame(height: 1)
+
+                    VStack(spacing: 10) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                Button { chatVM.send("Sudah sampai") } label: { quickReplyChip("Sudah sampai") }
+                                Button { chatVM.send("Sebentar lagi") } label: { quickReplyChip("Sebentar lagi") }
+                                Button { chatVM.send("Pesanan siap") } label: { quickReplyChip("Pesanan siap") }
+                            }
+                            .padding(.horizontal, 18)
                         }
-                        .padding(.horizontal, 18)
-                    }
 
-                    HStack(spacing: 9) {
-                        TextField("Tulis pesan ke \(pin.name)…", text: $messageText)
-                            .font(.system(size: 13.5))
-                            .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
-
-                        Button {
-                            chatVM.send(messageText)
-                            messageText = ""
-                        } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(red: 0.106, green: 0.31, blue: 0.878))
-                                    .frame(width: 40, height: 40)
-                                Image(systemName: "paperplane.fill")
-                                    .foregroundStyle(.white)
-                                    .font(.system(size: 14))
+                        HStack(spacing: 9) {
+                            TextField("Tulis pesan ke \(pin.name)…", text: $messageText)
+                                .font(.system(size: 13.5))
+                                .foregroundStyle(Color.appTextTertiary)
+                            Button {
+                                chatVM.send(messageText)
+                                messageText = ""
+                            } label: {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.appPrimary)
+                                        .frame(width: 38, height: 38)
+                                    Image(systemName: "paperplane.fill")
+                                        .foregroundStyle(.white)
+                                        .font(.system(size: 13))
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 7)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color(red: 0.965, green: 0.984, blue: 1))
-                    )
-                    .padding(.horizontal, 18)
-                }
-                .padding(.top, 13)
-                .padding(.bottom, 24)
-                .background(
-                    Color.white
-                        .overlay(
-                            Rectangle()
-                                .fill(Color(red: 0.933, green: 0.945, blue: 0.965))
-                                .frame(height: 1),
-                            alignment: .top
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(
+                            RoundedRectangle(cornerRadius: 13)
+                                .fill(Color(red: 0.949, green: 0.957, blue: 0.969))
                         )
-                )
+                        .padding(.horizontal, 18)
+
+                        SlideToCompleteButton {
+                            Task { await merchantVM.completePing(pingId: pin.id) }
+                            setActivePing(nil)
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 28)
+                    }
+                    .padding(.top, 12)
+                    .background(Color.white)
+                }
             } else {
                 Spacer()
             }
