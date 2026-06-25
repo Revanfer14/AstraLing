@@ -13,6 +13,9 @@ struct LoginView: View {
     
     @State private var email: String = ""
     @State private var password: String = ""
+    #if DEBUG
+    @State private var isSeeding = false
+    #endif
     
     var body: some View {
         NavigationStack {
@@ -80,6 +83,40 @@ struct LoginView: View {
                     .font(.footnote)
                     .padding(.top, 4)
                 }
+                .frame(height: 56)
+                .background(authVM.isLoading ? Color.blue.opacity(0.6) : Color.blue)
+                .foregroundStyle(Color.white)
+                .cornerRadius(12)
+                .padding(.top, 8)
+                .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
+
+                #if DEBUG
+                Button {
+                    isSeeding = true
+                    Task {
+                        await MockDataSeeder().seedAll()
+                        isSeeding = false
+                    }
+                } label: {
+                    Group {
+                        if isSeeding {
+                            ProgressView()
+                        } else {
+                            Text("Seed Mock Data")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(height: 48)
+                .foregroundStyle(Color.blue)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.blue.opacity(0.5), lineWidth: 1.5)
+                )
+                .disabled(isSeeding)
+                #endif
                 .padding(.horizontal, 24)
             }
         }
