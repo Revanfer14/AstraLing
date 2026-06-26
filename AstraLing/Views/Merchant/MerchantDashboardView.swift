@@ -126,7 +126,7 @@ struct MerchantDashboardView: View {
 
     private var balanceCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Saldo masuk · hari ini")
+            Text("Total Saldo")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
 
