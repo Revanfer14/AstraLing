@@ -39,6 +39,7 @@ final class MainMapViewModel: ObservableObject {
     @Published var balance: Int = 0
     @Published var activePings: [ActivePing] = []
     @Published var routes: [String: [CLLocationCoordinate2D]] = [:]
+    @Published var showPingRejected = false
 
     private let db = Firestore.firestore()
     private let radarRadiusMeters: Double = 10000000
@@ -270,10 +271,17 @@ final class MainMapViewModel: ObservableObject {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         pingsListener = db.collection("pings")
             .whereField("customerUid", isEqualTo: uid)
-            .whereField("status", in: [PingStatus.active.rawValue, PingStatus.onTheWay.rawValue])
+            .whereField("status", in: [PingStatus.active.rawValue, PingStatus.onTheWay.rawValue, PingStatus.rejected.rawValue])
             .addSnapshotListener { [weak self] snapshot, _ in
-                guard let self, let docs = snapshot?.documents else { return }
-                self.rawPings = docs.compactMap { try? $0.data(as: Ping.self) }
+                guard let self, let snapshot else { return }
+                for change in snapshot.documentChanges where change.type == .modified {
+                    if let ping = try? change.document.data(as: Ping.self), ping.status == .rejected {
+                        self.showPingRejected = true
+                    }
+                }
+                self.rawPings = snapshot.documents
+                    .compactMap { try? $0.data(as: Ping.self) }
+                    .filter { $0.status == .active || $0.status == .onTheWay }
                 self.rebuildActivePings()
             }
     }

@@ -99,6 +99,16 @@ struct MainMapView: View {
                         )
                         .presentationBackground(.clear)
                     }
+                    .fullScreenCover(isPresented: $vm.showPingRejected) {
+                        PingRejectedDialog(
+                            onDismiss: {
+                                vm.showPingRejected = false
+                                selectedMerchant = nil
+                                sheetDetent = .height(360)
+                            }
+                        )
+                        .presentationBackground(.clear)
+                    }
                     .sheet(isPresented: $showPingLocation) {
                         if let selected = selectedMerchant {
                             PingLocationSheet(
