@@ -100,24 +100,10 @@ struct PingChatSheet: View {
 
                 Spacer()
 
-                Menu {
-                    Button {
-                        onToggleFavorite()
-                    } label: {
-                        Label(
-                            isFavorite ? "Hapus dari favorit" : "Tambah ke favorit",
-                            systemImage: isFavorite ? "heart.fill" : "heart"
-                        )
-                    }
-                    Button(role: .destructive) {
-                        onRequestCancel()
-                    } label: {
-                        Label("Batalkan Ping", systemImage: "xmark.circle")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
+                Button(action: onToggleFavorite) {
+                    Image(systemName: isFavorite ? "heart.fill" : "heart")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(isFavorite ? .appError : .appPrimary)
                         .frame(width: 46, height: 46)
                         .background(Color.appSurfaceBlue)
                         .clipShape(RoundedRectangle(cornerRadius: 20))
