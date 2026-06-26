@@ -302,6 +302,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstraLing/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Aplikasi ini memerlukan akses ke kamera untuk mengambil foto profil.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Kami menggunakan lokasi Anda secara berkelanjutan agar pedagang tetap terlihat dan jaraknya akurat meski aplikasi berjalan di latar belakang.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kami menggunakan lokasi Anda untuk menemukan pedagang di sekitar, menampilkan posisi Anda di peta, serta memberikan estimasi jarak dan waktu tempuh.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk menyimpan foto profil.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk memilih foto profil.";
@@ -344,6 +345,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AstraLing/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Aplikasi ini memerlukan akses ke kamera untuk mengambil foto profil.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Kami menggunakan lokasi Anda secara berkelanjutan agar pedagang tetap terlihat dan jaraknya akurat meski aplikasi berjalan di latar belakang.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Kami menggunakan lokasi Anda untuk menemukan pedagang di sekitar, menampilkan posisi Anda di peta, serta memberikan estimasi jarak dan waktu tempuh.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk menyimpan foto profil.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Aplikasi ini memerlukan akses ke galeri untuk memilih foto profil.";
