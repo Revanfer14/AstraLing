@@ -417,4 +417,12 @@ final class MerchantViewModel: ObservableObject {
             "updatedAt": Timestamp(date: Date())
         ])
     }
+
+    func reject(_ ping: Ping) async {
+        guard let pingId = ping.id else { return }
+        try? await db.collection("pings").document(pingId).updateData([
+            "status": PingStatus.cancelled.rawValue,
+            "updatedAt": Timestamp(date: Date())
+        ])
+    }
 }
