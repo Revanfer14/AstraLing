@@ -977,75 +977,33 @@ struct KelilingModeView: View {
     private func chatSheetContent(for pin: PinItem) -> some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                HStack(spacing: 11) {
+                HStack(alignment: .top, spacing: 11) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 13.7)
                             .fill(Color(red: 0.918, green: 0.929, blue: 0.953))
-                            .frame(width: 42, height: 42)
+                            .frame(width: 47, height: 47)
                         Image(systemName: "person.fill")
                             .foregroundStyle(Color.appTextTertiary)
-                            .font(.system(size: 20))
+                            .font(.system(size: 22))
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text(pin.name)
-                            .font(.system(size: 15, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(Color.appTextPrimary)
-                        HStack(spacing: 5) {
-                            Circle()
-                                .fill(Color.appSuccess)
-                                .frame(width: 6, height: 6)
-                            Text("Menunggu kamu")
-                                .font(.system(size: 10.5))
-                                .foregroundStyle(Color.appSuccess)
-                        }
+                        Text(locationNames[pin.id] ?? "Memuat lokasi…")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Color.appSuccess)
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
 
                     Spacer()
-
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("± \(pin.walkMinutes) mnt")
-                            .font(.system(size: 12.5, weight: .bold))
-                            .foregroundStyle(Color.appTextPrimary)
-                        Text(pin.distanceLabel)
-                            .font(.system(size: 9.5))
-                            .foregroundStyle(Color.appTextTertiary)
-                    }
                 }
                 .padding(.horizontal, 18)
                 .padding(.top, 50)
                 .padding(.bottom, 12)
-
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Color.appTextTertiary)
-                        .padding(.top, 2)
-                    Text(pin.note ?? "Lokasi pelanggan")
-                        .font(.system(size: 10.5))
-                        .foregroundStyle(Color.appTextTertiary)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Button {
-                        let coord = CLLocationCoordinate2D(
-                            latitude: pin.coordinate.latitude,
-                            longitude: pin.coordinate.longitude
-                        )
-                        let item = MKMapItem(placemark: MKPlacemark(coordinate: coord))
-                        item.name = pin.name
-                        item.openInMaps()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "paperplane.fill")
-                                .font(.system(size: 10))
-                            Text("Navigasi")
-                                .font(.system(size: 10.5, weight: .bold))
-                        }
-                        .foregroundStyle(Color.appPrimary)
-                    }
-                }
-                .padding(.horizontal, 18)
-                .padding(.bottom, 12)
+                .task(id: pin.id) { resolveLocationName(for: pin) }
 
                 Rectangle()
                     .fill(Color(red: 0.933, green: 0.945, blue: 0.965))

@@ -314,7 +314,7 @@ struct PingChatSheet: View {
         VStack(spacing: 11) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(["Sudah sampai", "Sebentar lagi", "Pesanan siap"], id: \.self) { chip in
+                    ForEach(["Sesuai titik ya", "Alamat sudah sesuai", "Dimana bang?"], id: \.self) { chip in
                         Button {
                             vm.send(chip)
                         } label: {
