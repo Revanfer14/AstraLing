@@ -324,6 +324,10 @@ struct KelilingModeView: View {
             )
             .presentationBackground(.clear)
         }
+        .fullScreenCover(item: $merchantVM.cancelledPingAlert) { _ in
+            PingCancelledDialog(onDismiss: { merchantVM.cancelledPingAlert = nil })
+                .presentationBackground(.clear)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
             guard let txnId = notification.object as? String,
                   let txn = merchantVM.transaction(for: txnId) else { return }

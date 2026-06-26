@@ -19,6 +19,7 @@ final class MerchantViewModel: ObservableObject {
     @Published var menuItems: [MenuItem] = []
     @Published var activePings: [Ping] = []
     @Published var newPingAlert: Ping? = nil
+    @Published var cancelledPingAlert: Ping? = nil
     @Published var isSaving = false
     @Published var errorMessage: String? = nil
     @Published var activeRoute: [CLLocationCoordinate2D] = []
@@ -33,6 +34,7 @@ final class MerchantViewModel: ObservableObject {
     private var receivedTransactions: [String: Transaction] = [:]
     private var knownPingIds: Set<String> = []
     private var isFirstPingLoad = true
+    private var notifiedCancelledIds: Set<String> = []
     private var lastServingState: Bool?
     private var lastRoutedMerchantLocation: CLLocation?
     private var lastRoutedCustomerCoord: CLLocationCoordinate2D?
@@ -84,10 +86,20 @@ final class MerchantViewModel: ObservableObject {
                     self.syncServingState()
                     return
                 }
+                let previousActiveIds = Set(self.activePings.compactMap { $0.id })
                 self.activePings = snapshot.documents.compactMap {
                     try? $0.data(as: Ping.self)
                 }.filter { $0.status == .active || $0.status == .onTheWay }
                 self.syncServingState()
+                for change in snapshot.documentChanges where change.type == .modified {
+                    guard let ping = try? change.document.data(as: Ping.self),
+                          ping.status == .cancelled else { continue }
+                    let docId = change.document.documentID
+                    guard previousActiveIds.contains(docId),
+                          !self.notifiedCancelledIds.contains(docId) else { continue }
+                    self.notifiedCancelledIds.insert(docId)
+                    self.cancelledPingAlert = ping
+                }
                 for change in snapshot.documentChanges where change.type == .added {
                     let docId = change.document.documentID
                     guard !self.knownPingIds.contains(docId) else { continue }
