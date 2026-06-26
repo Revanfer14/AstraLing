@@ -32,6 +32,7 @@ final class MerchantViewModel: ObservableObject {
     private var receivedTransactions: [String: Transaction] = [:]
     private var knownPingIds: Set<String> = []
     private var isFirstPingLoad = true
+    private var lastServingState: Bool?
     private var lastRoutedMerchantLocation: CLLocation?
     private var lastRoutedCustomerCoord: CLLocationCoordinate2D?
     private let routeRefreshThresholdMeters: Double = 30
@@ -79,11 +80,13 @@ final class MerchantViewModel: ObservableObject {
                     self.activePings = snapshot.documents.compactMap {
                         try? $0.data(as: Ping.self)
                     }.filter { $0.status == .active || $0.status == .onTheWay }
+                    self.syncServingState()
                     return
                 }
                 self.activePings = snapshot.documents.compactMap {
                     try? $0.data(as: Ping.self)
                 }.filter { $0.status == .active || $0.status == .onTheWay }
+                self.syncServingState()
                 for change in snapshot.documentChanges where change.type == .added {
                     let docId = change.document.documentID
                     guard !self.knownPingIds.contains(docId) else { continue }
@@ -184,8 +187,16 @@ final class MerchantViewModel: ObservableObject {
     func goOfflineBestEffort() {
         presenceRef?.setData([
             "isVisible": false,
+            "isServing": false,
             "locationUpdatedAt": FieldValue.serverTimestamp()
         ], merge: true)
+    }
+
+    private func syncServingState() {
+        let serving = activePings.contains { $0.status == .onTheWay }
+        guard serving != lastServingState else { return }
+        lastServingState = serving
+        presenceRef?.setData(["isServing": serving], merge: true)
     }
 
     private var presenceRef: DocumentReference? {

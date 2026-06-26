@@ -35,6 +35,13 @@ final class LocationService: NSObject, ObservableObject {
     func stopUpdating() {
         manager.stopUpdatingLocation()
     }
+
+    static func reverseGeocode(_ coordinate: CLLocationCoordinate2D) async -> String? {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        guard let p = try? await CLGeocoder().reverseGeocodeLocation(location).first else { return nil }
+        let parts = [p.thoroughfare, p.subThoroughfare].compactMap { $0 }
+        return parts.isEmpty ? (p.name ?? p.locality) : parts.joined(separator: " No. ")
+    }
 }
 
 extension LocationService: CLLocationManagerDelegate {

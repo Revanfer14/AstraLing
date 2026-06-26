@@ -21,6 +21,7 @@ struct NearbyMerchant: Identifiable {
     var distanceLabel: String
     var walkLabel: String
     let bannerUrl: String?
+    let isServing: Bool
 }
 
 struct ActivePing: Identifiable {
@@ -142,14 +143,17 @@ final class MainMapViewModel: ObservableObject {
         activePings.first { $0.merchantUid == merchantUid }
     }
 
-    func sendPing(to merchant: NearbyMerchant) {
-        guard let uid = Auth.auth().currentUser?.uid, let loc = userLocation else { return }
-        let coord = loc.coordinate
+    func sendPing(to merchant: NearbyMerchant,
+                  at coordinate: CLLocationCoordinate2D? = nil,
+                  note: String? = nil) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let coord = coordinate ?? userLocation?.coordinate else { return }
         let ping = Ping(
             customerUid: uid,
             merchantUid: merchant.id,
             customerName: customerName,
             customerLocation: GeoPoint(latitude: coord.latitude, longitude: coord.longitude),
+            note: note,
             status: .active,
             updatedAt: Timestamp(date: Date())
         )
@@ -314,7 +318,8 @@ final class MainMapViewModel: ObservableObject {
                 isFavorite: favoriteUids.contains(presence.merchantUid),
                 distanceLabel: distLabel,
                 walkLabel: walkLabel,
-                bannerUrl: presence.bannerUrl
+                bannerUrl: presence.bannerUrl,
+                isServing: presence.isServing ?? false
             )
         }
         .filter { merchant in
