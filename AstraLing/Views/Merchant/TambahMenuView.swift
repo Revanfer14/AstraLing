@@ -37,7 +37,7 @@ struct TambahMenuView: View {
 
                 fieldBlock(label: "Nama menu") {
                     TextField("Contoh: Martabak Susu", text: $name)
-                        .font(.system(size: 15))
+                        .font(.app(.s16))
                         .foregroundStyle(darkText)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
@@ -51,11 +51,11 @@ struct TambahMenuView: View {
                 fieldBlock(label: "Harga") {
                     HStack(spacing: 4) {
                         Text("Rp")
-                            .font(.system(size: 15))
+                            .font(.app(.s16))
                             .foregroundStyle(greyText)
                         TextField("0", text: $priceText)
                             .focused($priceFocused)
-                            .font(.system(size: 15))
+                            .font(.app(.s16))
                             .foregroundStyle(darkText)
                             .keyboardType(.numberPad)
                             .onChange(of: priceText) { _, newValue in
@@ -81,11 +81,11 @@ struct TambahMenuView: View {
                     } label: {
                         HStack {
                             Text(selectedCategory.isEmpty ? "Pilih kategori" : selectedCategory)
-                                .font(.system(size: 15))
+                                .font(.app(.s16))
                                 .foregroundStyle(selectedCategory.isEmpty ? greyText : darkText)
                             Spacer()
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 14))
+                                .font(.app(.s14))
                                 .foregroundStyle(greyText)
                         }
                         .padding(.horizontal, 16)
@@ -113,7 +113,7 @@ struct TambahMenuView: View {
                                 .tint(.white)
                         } else {
                             Label("Simpan Menu", systemImage: "square.and.arrow.down")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.app(.s16, weight: .bold))
                                 .foregroundStyle(Color.white)
                         }
                     }
@@ -153,15 +153,15 @@ struct TambahMenuView: View {
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(darkText)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Tambah Menu Baru")
-                    .font(.system(size: 18))
+                    .font(.app(.s18))
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Lengkapi detail menu")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(greyText)
             }
         }
@@ -184,7 +184,7 @@ struct TambahMenuView: View {
                                     .fill(Color.Token.blue100)
                                     .frame(width: 96, height: 96)
                                 Image(systemName: "photo")
-                                    .font(.system(size: 28))
+                                    .font(.app(.s28))
                                     .foregroundStyle(primaryBlue.opacity(0.4))
                             }
                         }
@@ -195,7 +195,7 @@ struct TambahMenuView: View {
                             .frame(width: 34, height: 34)
                             .overlay(Circle().stroke(Color.white, lineWidth: 3))
                         Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.app(.s14, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     .offset(x: 4, y: 4)
@@ -203,7 +203,7 @@ struct TambahMenuView: View {
             }
 
             Text("Tambahkan foto menu")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
         }
         .frame(maxWidth: .infinity)
@@ -214,7 +214,7 @@ struct TambahMenuView: View {
     private func fieldBlock<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(label)
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(labelColor)
             content()
         }

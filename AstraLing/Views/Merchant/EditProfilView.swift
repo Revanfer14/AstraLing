@@ -40,7 +40,7 @@ struct EditProfilView: View {
                             .padding(.top, 24)
 
                         Text("Nama merchant")
-                            .font(.system(size: 12.5))
+                            .font(.app(.s12))
                             .foregroundStyle(labelColor)
                             .padding(.horizontal, 20)
                             .padding(.top, 28)
@@ -48,7 +48,7 @@ struct EditProfilView: View {
                         nameField
 
                         Text("Deskripsi singkat")
-                            .font(.system(size: 12.5))
+                            .font(.app(.s12))
                             .foregroundStyle(labelColor)
                             .padding(.horizontal, 20)
                             .padding(.top, 28)
@@ -57,12 +57,12 @@ struct EditProfilView: View {
 
                         HStack {
                             Text("Menu Toko")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.app(.s16, weight: .bold))
                                 .foregroundStyle(darkText)
                             Spacer()
                             NavigationLink(destination: KelolaMenuView().navigationBarBackButtonHidden(true).environmentObject(merchantVM)) {
                                 Label("Ubah Menu & Harga", systemImage: "square.and.pencil")
-                                    .font(.system(size: 14))
+                                    .font(.app(.s14))
                                     .foregroundStyle(primaryBlue)
                             }
                         }
@@ -109,11 +109,11 @@ struct EditProfilView: View {
                         .frame(width: 42, height: 42)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(darkText)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
             Text("Edit Profil")
-                .font(.system(size: 18).bold())
+                .font(.app(.s18, weight: .bold))
                 .foregroundStyle(darkText)
         }
     }
@@ -155,7 +155,7 @@ struct EditProfilView: View {
                             .frame(width: 32, height: 32)
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.white, lineWidth: 3))
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.app(.s12, weight: .bold))
                             .foregroundStyle(.white)
                     }
                     .offset(x: 4, y: 4)
@@ -175,7 +175,7 @@ struct EditProfilView: View {
                                 .frame(width: 26, height: 26)
                                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
                             Image(systemName: "xmark")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.app(.s12, weight: .bold))
                                 .foregroundStyle(.white)
                         }
                     }
@@ -184,7 +184,7 @@ struct EditProfilView: View {
             }
 
             Text(hasPhoto ? "Ketuk foto untuk ganti · X untuk hapus" : "Ketuk untuk tambah foto toko")
-                .font(.system(size: 12.5))
+                .font(.app(.s12))
                 .foregroundStyle(labelColor)
         }
         .frame(maxWidth: .infinity)
@@ -196,7 +196,7 @@ struct EditProfilView: View {
                 .fill(Color(red: 0.847, green: 0.710, blue: 0.455))
                 .frame(width: 169, height: 94)
             Image(systemName: "fork.knife")
-                .font(.system(size: 24))
+                .font(.app(.s24))
                 .foregroundStyle(.white.opacity(0.8))
         }
     }
@@ -204,7 +204,7 @@ struct EditProfilView: View {
     private var nameField: some View {
         HStack {
             TextField("", text: $merchantName)
-                .font(.system(size: 16))
+                .font(.app(.s16))
                 .foregroundStyle(darkText)
                 .onChange(of: merchantName) { _, newValue in
                     if newValue.count > maxNameLength {
@@ -212,7 +212,7 @@ struct EditProfilView: View {
                     }
                 }
             Text("\(merchantName.count)/\(maxNameLength)")
-                .font(.system(size: 11.5))
+                .font(.app(.s12))
                 .foregroundStyle(labelColor)
         }
         .padding(.horizontal, 20)
@@ -222,7 +222,7 @@ struct EditProfilView: View {
 
     private var descriptionField: some View {
         TextField("", text: $descriptionText, axis: .vertical)
-            .font(.system(size: 15))
+            .font(.app(.s16))
             .foregroundStyle(Color(red: 0.278, green: 0.333, blue: 0.412))
             .lineSpacing(8)
             .padding(.horizontal, 20)
@@ -236,7 +236,7 @@ struct EditProfilView: View {
                 .fill(Color(red: 0.847, green: 0.710, blue: 0.455))
                 .frame(width: 44, height: 44)
             Image(systemName: "fork.knife")
-                .font(.system(size: 13))
+                .font(.app(.s14))
                 .foregroundStyle(.white.opacity(0.8))
         }
     }
@@ -261,15 +261,15 @@ struct EditProfilView: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
-                    .font(.system(size: 14.5))
+                    .font(.app(.s14))
                     .foregroundStyle(darkText)
                 Text(item.price.rupiah)
-                    .font(.system(size: 13))
+                    .font(.app(.s14))
                     .foregroundStyle(labelColor)
             }
             Spacer()
             Text(item.status == .tersedia ? "Tersedia" : "Stok habis")
-                .font(.system(size: 11))
+                .font(.app(.s12))
                 .foregroundStyle(
                     item.status == .tersedia
                         ? Color(red: 0.098, green: 0.702, blue: 0.42)
@@ -301,7 +301,7 @@ struct EditProfilView: View {
                     ProgressView().progressViewStyle(.circular).tint(.white)
                 } else {
                     Label("Simpan Profil", systemImage: "square.and.arrow.down")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.app(.s16, weight: .bold))
                         .foregroundStyle(Color.white)
                 }
             }
@@ -319,9 +319,9 @@ struct EditProfilView: View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.white)
-                .font(.system(size: 16))
+                .font(.app(.s16))
             Text("Profil berhasil disimpan")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.app(.s14, weight: .semibold))
                 .foregroundStyle(.white)
         }
         .padding(.horizontal, 20)

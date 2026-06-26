@@ -35,7 +35,7 @@ struct KelolaMenuView: View {
 
                     if !merchantVM.menuItems.isEmpty {
                         Text("MAKANAN")
-                            .font(.system(size: 12))
+                            .font(.app(.s12))
                             .foregroundStyle(Color.appTextTertiary)
                             .tracking(0.3)
                     }
@@ -110,15 +110,15 @@ struct KelolaMenuView: View {
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(darkText)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Kelola Menu & Harga")
-                    .font(.system(size: 18))
+                    .font(.app(.s18))
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Atur menu, harga, dan ketersediaan")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(Color.appTextTertiary)
             }
         }
@@ -172,7 +172,7 @@ struct KelolaMenuView: View {
                                 .frame(width: 20, height: 20)
                                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white, lineWidth: 2))
                             Image(systemName: "camera.fill")
-                                .font(.system(size: 8, weight: .bold))
+                                .font(.app(.s12, weight: .bold))
                                 .foregroundStyle(.white)
                         }
                         .offset(x: 3, y: 3)
@@ -188,7 +188,7 @@ struct KelolaMenuView: View {
                                     .frame(width: 18, height: 18)
                                     .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
                                 Image(systemName: "xmark")
-                                    .font(.system(size: 7, weight: .bold))
+                                    .font(.app(.s12, weight: .bold))
                                     .foregroundStyle(.white)
                             }
                         }
@@ -199,17 +199,17 @@ struct KelolaMenuView: View {
                 VStack(alignment: .leading, spacing: 11) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("NAMA MENU")
-                            .font(.system(size: 10.5))
+                            .font(.app(.s12))
                             .foregroundStyle(labelColor)
                             .tracking(0.3)
 
                         HStack {
                             TextField("", text: nameBinding)
-                                .font(.system(size: 15))
+                                .font(.app(.s16))
                                 .foregroundStyle(darkText)
                                 .onSubmit { scheduleAutoSave(id: id) }
                             Image(systemName: "pencil")
-                                .font(.system(size: 12))
+                                .font(.app(.s12))
                                 .foregroundStyle(labelColor)
                         }
                         .frame(height: 38)
@@ -223,21 +223,21 @@ struct KelolaMenuView: View {
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("HARGA")
-                            .font(.system(size: 10.5))
+                            .font(.app(.s12))
                             .foregroundStyle(labelColor)
                             .tracking(0.3)
 
                         HStack(spacing: 2) {
                             Text("Rp")
-                                .font(.system(size: 15))
+                                .font(.app(.s16))
                                 .foregroundStyle(labelColor)
                             TextField("", text: priceBinding)
-                                .font(.system(size: 15))
+                                .font(.app(.s16))
                                 .foregroundStyle(Color(red: 0.106, green: 0.310, blue: 0.878))
                                 .keyboardType(.numberPad)
                                 .onSubmit { scheduleAutoSave(id: id) }
                             Image(systemName: "pencil")
-                                .font(.system(size: 12))
+                                .font(.app(.s12))
                                 .foregroundStyle(labelColor)
                         }
                         .frame(height: 38)
@@ -252,7 +252,7 @@ struct KelolaMenuView: View {
             }
 
             Text("STATUS KETERSEDIAAN")
-                .font(.system(size: 10.5))
+                .font(.app(.s12))
                 .foregroundStyle(labelColor)
                 .tracking(0.3)
                 .padding(.top, 7)
@@ -268,7 +268,7 @@ struct KelolaMenuView: View {
                     Task { await merchantVM.deleteMenuItem(id: id) }
                 } label: {
                     Image(systemName: "trash.fill")
-                        .font(.system(size: 15))
+                        .font(.app(.s16))
                         .foregroundStyle(Color(red: 0.91, green: 0.271, blue: 0.235))
                         .padding(10)
                         .frame(width: 48)
@@ -292,7 +292,7 @@ struct KelolaMenuView: View {
                 .fill(Color(red: 0.847, green: 0.710, blue: 0.455))
                 .frame(width: 60, height: 60)
             Image(systemName: "fork.knife")
-                .font(.system(size: 16))
+                .font(.app(.s16))
                 .foregroundStyle(.white.opacity(0.8))
         }
     }
@@ -306,11 +306,11 @@ struct KelolaMenuView: View {
             HStack(spacing: 6) {
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.app(.s12, weight: .bold))
                         .foregroundStyle(activeColor)
                 }
                 Text(label)
-                    .font(.system(size: 12.5))
+                    .font(.app(.s12))
                     .foregroundStyle(isSelected ? activeColor : labelColor)
             }
             .frame(maxWidth: .infinity)
@@ -322,8 +322,8 @@ struct KelolaMenuView: View {
     private var addMenuButton: some View {
         NavigationLink(destination: TambahMenuView().navigationBarBackButtonHidden(true).environmentObject(merchantVM)) {
             HStack(spacing: 8) {
-                Image(systemName: "plus").font(.system(size: 16, weight: .bold))
-                Text("Tambah Menu Baru").font(.system(size: 16, weight: .bold))
+                Image(systemName: "plus").font(.app(.s16, weight: .bold))
+                Text("Tambah Menu Baru").font(.app(.s16, weight: .bold))
             }
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)

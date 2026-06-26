@@ -28,7 +28,7 @@ struct MerchantDashboardView: View {
                     .padding(.horizontal, 16)
 
                 Text("Ringkasan Usaha Hari Ini")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.app(.s18, weight: .bold))
                     .foregroundStyle(Color.appTextPrimary)
                     .padding(.horizontal, 16)
                     .padding(.top, 24)
@@ -39,7 +39,7 @@ struct MerchantDashboardView: View {
 
                 HStack {
                     Text("Rekap Usaha")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.app(.s18, weight: .bold))
                         .foregroundStyle(Color.appTextPrimary)
                     Spacer()
                     Menu {
@@ -49,10 +49,10 @@ struct MerchantDashboardView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Text(selectedPeriod)
-                                .font(.system(size: 11.5))
+                                .font(.app(.s12))
                                 .foregroundStyle(Color.appPrimary)
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 9, weight: .semibold))
+                                .font(.app(.s12, weight: .semibold))
                                 .foregroundStyle(Color.appPrimary)
                         }
                         .padding(.horizontal, 8)
@@ -78,7 +78,7 @@ struct MerchantDashboardView: View {
                     }
                 } label: {
                     Text("Keluar Akun")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.app(.s16, weight: .bold))
                         .foregroundStyle(Color.red)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -108,16 +108,16 @@ struct MerchantDashboardView: View {
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(Color.appTextPrimary)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Dashboard Usaha")
-                    .font(.system(size: 18).bold())
+                    .font(.app(.s18, weight: .bold))
                     .foregroundStyle(Color.appTextPrimary)
                 Text(merchantVM.merchant?.name ?? "Memuat...")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
             }
         }
@@ -127,16 +127,16 @@ struct MerchantDashboardView: View {
     private var balanceCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Total Saldo")
-                .font(.system(size: 12.5))
+                .font(.app(.s12))
                 .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
 
             Text((merchantVM.merchant?.balance ?? 0).rupiah)
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .padding(.top, 2)
 
             Text("▲ Hari ini · \(txnVM.todayCount) transaksi")
-                .font(.system(size: 12.5))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appSuccess)
                 .padding(.bottom, 12)
 
@@ -148,15 +148,15 @@ struct MerchantDashboardView: View {
                             .frame(width: 34, height: 34)
                         Image(systemName: "clock.arrow.circlepath")
                             .foregroundStyle(.white)
-                            .font(.system(size: 14))
+                            .font(.app(.s14))
                     }
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Lihat Riwayat Transaksi")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.app(.s14, weight: .bold))
                             .foregroundStyle(Color.appTextPrimary)
                         Text("Semua pemasukan & penarikan")
-                            .font(.system(size: 11))
+                            .font(.app(.s12))
                             .foregroundStyle(Color.appTextTertiary)
                     }
 
@@ -164,7 +164,7 @@ struct MerchantDashboardView: View {
 
                     Image(systemName: "chevron.right")
                         .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
-                        .font(.system(size: 13))
+                        .font(.app(.s14))
                 }
                 .padding(.horizontal, 15)
                 .padding(.vertical, 13)
@@ -181,9 +181,6 @@ struct MerchantDashboardView: View {
                 NavigationLink(destination: QRSayaView().navigationBarBackButtonHidden(true).environmentObject(merchantVM)) {
                     quickActionItem(icon: "qrcode", label: "QR Saya")
                 }
-//                NavigationLink(destination: EditProfilView().navigationBarBackButtonHidden(true)) {
-//                    quickActionItem(icon: "square.and.pencil", label: "Edit Profile")
-//                }
             }
             .padding(.top, 11)
         }
@@ -203,10 +200,10 @@ struct MerchantDashboardView: View {
                     .frame(width: 36, height: 36)
                 Image(systemName: icon)
                     .foregroundStyle(Color.appPrimary)
-                    .font(.system(size: 15))
+                    .font(.app(.s16))
             }
             Text(label)
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -263,20 +260,20 @@ struct MerchantDashboardView: View {
                     .frame(width: 38, height: 38)
                 Image(systemName: icon)
                     .foregroundStyle(Color.appPrimary)
-                    .font(.system(size: 15))
+                    .font(.app(.s16))
             }
 
             Text(value)
-                .font(.system(size: 18, weight: .bold))
+                .font(.app(.s18, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .padding(.top, 10)
 
             Text(label)
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color(red: 0.58, green: 0.627, blue: 0.702))
 
             Text(change)
-                .font(.system(size: 11.5))
+                .font(.app(.s12))
                 .foregroundStyle(changeColor)
                 .padding(.top, 4)
         }
@@ -292,18 +289,18 @@ struct MerchantDashboardView: View {
     private var rekapCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Jam Tersibuk")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
 
             Text("Pukul 16.00 – 19.00")
-                .font(.system(size: 18, weight: .bold))
+                .font(.app(.s18, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .padding(.bottom, 11)
 
             divider
 
             Text("Area Terbanyak Transaksi")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
                 .padding(.top, 11)
 
@@ -344,7 +341,7 @@ struct MerchantDashboardView: View {
                 + Text(" area Perumahan Griya selalu ramai, coba pertimbangkan lewat sana.")
                     .foregroundStyle(Color.appTextSecondary)
             )
-            .font(.system(size: 13))
+            .font(.app(.s14))
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14)
             .padding(.vertical, 13)
@@ -357,7 +354,7 @@ struct MerchantDashboardView: View {
             divider.padding(.top, 16)
 
             Text("Pelanggan bulan ini")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
                 .padding(.top, 16)
 
@@ -394,7 +391,7 @@ struct MerchantDashboardView: View {
     private func areaBar(name: String, fraction: CGFloat, percent: String, nameColor: Color, barColor: Color, percentColor: Color) -> some View {
         HStack(spacing: 10) {
             Text(name)
-                .font(.system(size: 13))
+                .font(.app(.s14))
                 .foregroundStyle(nameColor)
                 .frame(width: 130, alignment: .leading)
                 .lineLimit(1)
@@ -412,7 +409,7 @@ struct MerchantDashboardView: View {
             .frame(height: 8)
 
             Text(percent)
-                .font(.system(size: 13))
+                .font(.app(.s14))
                 .foregroundStyle(percentColor)
                 .frame(width: 40, alignment: .trailing)
         }
@@ -421,10 +418,10 @@ struct MerchantDashboardView: View {
     private func customerBox(number: String, label: String, bgColor: Color, numberColor: Color) -> some View {
         VStack(spacing: 3) {
             Text(number)
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(numberColor)
             Text(label)
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
