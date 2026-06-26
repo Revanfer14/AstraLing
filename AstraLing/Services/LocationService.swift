@@ -19,11 +19,13 @@ final class LocationService: NSObject, ObservableObject {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.allowsBackgroundLocationUpdates = true
+        manager.pausesLocationUpdatesAutomatically = false
         authorizationStatus = manager.authorizationStatus
     }
 
-    func requestWhenInUse() {
-        manager.requestWhenInUseAuthorization()
+    func requestAuthorization() {
+        manager.requestAlwaysAuthorization()
     }
 
     func startUpdating() {

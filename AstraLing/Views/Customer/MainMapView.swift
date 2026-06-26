@@ -177,7 +177,7 @@ struct MainMapView: View {
         .animation(.easeInOut(duration: 0.2), value: isFarFromUser)
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: vm.activePings.count)
         .onAppear {
-            location.requestWhenInUse()
+            location.requestAuthorization()
             vm.start()
         }
         .onChange(of: location.current) { _, newLoc in

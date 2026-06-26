@@ -40,7 +40,7 @@ final class MainMapViewModel: ObservableObject {
     @Published var routes: [String: [CLLocationCoordinate2D]] = [:]
 
     private let db = Firestore.firestore()
-    private let radarRadiusMeters: Double = 1000
+    private let radarRadiusMeters: Double = 10000000
     private var listener: ListenerRegistration?
     private var pingsListener: ListenerRegistration?
     private var rawMerchants: [Merchant] = []

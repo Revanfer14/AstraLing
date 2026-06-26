@@ -226,6 +226,7 @@ struct KelilingModeView: View {
         .ignoresSafeArea()
         .onAppear {
             merchantVM.startListening()
+            location.requestAuthorization()
             location.startUpdating()
         }
         .onDisappear {
@@ -767,7 +768,7 @@ struct KelilingModeView: View {
     }
     
     private func recenterOnUser() {
-        location.requestWhenInUse()
+        location.requestAuthorization()
         if let current = location.current {
             let newRegion = MKCoordinateRegion(center: current.coordinate, span: currentRegion.span)
             withAnimation { mapPosition = .region(newRegion) }
