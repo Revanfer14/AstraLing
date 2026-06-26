@@ -309,6 +309,21 @@ struct KelilingModeView: View {
             get: { isVisible ? nil : fullScreen },
             set: { fullScreen = $0 }
         )) { fullScreenContent($0) }
+        .fullScreenCover(item: $merchantVM.newPingAlert) { ping in
+            NewPingDialog(
+                customerName: ping.customerName,
+                coordinate: CLLocationCoordinate2D(
+                    latitude: ping.customerLocation.latitude,
+                    longitude: ping.customerLocation.longitude
+                ),
+                onQueue: { merchantVM.newPingAlert = nil },
+                onReject: {
+                    Task { await merchantVM.reject(ping) }
+                    merchantVM.newPingAlert = nil
+                }
+            )
+            .presentationBackground(.clear)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
             guard let txnId = notification.object as? String,
                   let txn = merchantVM.transaction(for: txnId) else { return }

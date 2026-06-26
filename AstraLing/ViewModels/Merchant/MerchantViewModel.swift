@@ -18,6 +18,7 @@ final class MerchantViewModel: ObservableObject {
     @Published var presence: MerchantPresence? = nil
     @Published var menuItems: [MenuItem] = []
     @Published var activePings: [Ping] = []
+    @Published var newPingAlert: Ping? = nil
     @Published var isSaving = false
     @Published var errorMessage: String? = nil
     @Published var activeRoute: [CLLocationCoordinate2D] = []
@@ -96,6 +97,9 @@ final class MerchantViewModel: ObservableObject {
                             customerName: ping.customerName,
                             pingId: docId
                         )
+                        if self.activePings.contains(where: { $0.status == .onTheWay }) {
+                            self.newPingAlert = ping
+                        }
                     }
                 }
             }

@@ -10,7 +10,7 @@ enum PingStatus: String, Codable {
 /// `pings/{pingId}` — a customer signalling "I'm coming" to a merchant.
 ///
 /// Status lifecycle: active → on_the_way → completed | cancelled
-struct Ping: Codable {
+struct Ping: Identifiable, Codable {
     @DocumentID var id: String?
     var customerUid: String
     var merchantUid: String
