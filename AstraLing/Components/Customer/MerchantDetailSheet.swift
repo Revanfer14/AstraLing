@@ -20,6 +20,9 @@ struct MerchantDetailSheet: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 16) {
                 headerRow
+                if merchant.isServing {
+                    servingStatusPill
+                }
                 distanceRow
                 photoStrip
                 menuContent
@@ -63,6 +66,17 @@ struct MerchantDetailSheet: View {
             }
         }
         .padding(.top, 20)
+    }
+
+    private var servingStatusPill: some View {
+        Text("Sedang melayani pelanggan lain")
+            .font(.system(size: 14))
+            .foregroundColor(.appPrimary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.appSurfaceBlue)
+            .clipShape(Capsule())
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var distanceRow: some View {

@@ -21,6 +21,7 @@ struct NearbyMerchant: Identifiable {
     var distanceLabel: String
     var walkLabel: String
     let bannerUrl: String?
+    let isServing: Bool
 }
 
 struct ActivePing: Identifiable {
@@ -38,6 +39,7 @@ final class MainMapViewModel: ObservableObject {
     @Published var balance: Int = 0
     @Published var activePings: [ActivePing] = []
     @Published var routes: [String: [CLLocationCoordinate2D]] = [:]
+    @Published var showPingRejected = false
 
     private let db = Firestore.firestore()
     private let radarRadiusMeters: Double = 10000000
@@ -142,14 +144,17 @@ final class MainMapViewModel: ObservableObject {
         activePings.first { $0.merchantUid == merchantUid }
     }
 
-    func sendPing(to merchant: NearbyMerchant) {
-        guard let uid = Auth.auth().currentUser?.uid, let loc = userLocation else { return }
-        let coord = loc.coordinate
+    func sendPing(to merchant: NearbyMerchant,
+                  at coordinate: CLLocationCoordinate2D? = nil,
+                  note: String? = nil) {
+        guard let uid = Auth.auth().currentUser?.uid else { return }
+        guard let coord = coordinate ?? userLocation?.coordinate else { return }
         let ping = Ping(
             customerUid: uid,
             merchantUid: merchant.id,
             customerName: customerName,
             customerLocation: GeoPoint(latitude: coord.latitude, longitude: coord.longitude),
+            note: note,
             status: .active,
             updatedAt: Timestamp(date: Date())
         )
@@ -266,10 +271,17 @@ final class MainMapViewModel: ObservableObject {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         pingsListener = db.collection("pings")
             .whereField("customerUid", isEqualTo: uid)
-            .whereField("status", in: [PingStatus.active.rawValue, PingStatus.onTheWay.rawValue])
+            .whereField("status", in: [PingStatus.active.rawValue, PingStatus.onTheWay.rawValue, PingStatus.rejected.rawValue])
             .addSnapshotListener { [weak self] snapshot, _ in
-                guard let self, let docs = snapshot?.documents else { return }
-                self.rawPings = docs.compactMap { try? $0.data(as: Ping.self) }
+                guard let self, let snapshot else { return }
+                for change in snapshot.documentChanges where change.type == .modified {
+                    if let ping = try? change.document.data(as: Ping.self), ping.status == .rejected {
+                        self.showPingRejected = true
+                    }
+                }
+                self.rawPings = snapshot.documents
+                    .compactMap { try? $0.data(as: Ping.self) }
+                    .filter { $0.status == .active || $0.status == .onTheWay }
                 self.rebuildActivePings()
             }
     }
@@ -314,7 +326,8 @@ final class MainMapViewModel: ObservableObject {
                 isFavorite: favoriteUids.contains(presence.merchantUid),
                 distanceLabel: distLabel,
                 walkLabel: walkLabel,
-                bannerUrl: presence.bannerUrl
+                bannerUrl: presence.bannerUrl,
+                isServing: presence.isServing ?? false
             )
         }
         .filter { merchant in

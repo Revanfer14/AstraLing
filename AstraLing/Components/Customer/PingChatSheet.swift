@@ -55,16 +55,23 @@ struct PingChatSheet: View {
     }
 
     private var waitingPlaceholder: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "hourglass")
-                .font(.system(size: 36))
-                .foregroundColor(.appPrimary.opacity(0.4))
-            Text("Chat akan terbuka setelah pedagang mengonfirmasi pingmu")
-                .font(.system(size: 14))
-                .foregroundColor(.appTextTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            Image("waitingchat")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 268)
+            VStack(spacing: 10) {
+                Text("Menunggu Konfirmasi Pedagang")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.appTextSecondary)
+                    .multilineTextAlignment(.center)
+                Text("Chat akan tersedia setelah pedagang menerima Ping kamu. Kami akan memberi tahu segera setelah ada konfirmasi.")
+                    .font(.system(size: 14))
+                    .foregroundColor(.appTextTertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 28)
+            }
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -137,7 +144,7 @@ struct PingChatSheet: View {
                     }
                     if !merchant.walkLabel.isEmpty {
                         HStack(spacing: 6) {
-                            Image(systemName: "figure.walk")
+                            Image(systemName: "clock.fill")
                                 .foregroundColor(.appPrimary)
                             Text(merchant.walkLabel)
                                 .foregroundColor(.appTextPrimary)
@@ -162,15 +169,15 @@ struct PingChatSheet: View {
         case .active:
             HStack(spacing: 8) {
                 Circle()
-                    .fill(Color.appTextTertiary)
+                    .fill(Color.appPrimary)
                     .frame(width: 10, height: 10)
-                Text("Menunggu konfirmasi")
+                Text("Menunggu konfirmasi pedagang")
                     .font(.system(size: 14))
-                    .foregroundColor(Color.appTextSecondary)
+                    .foregroundColor(Color.appPrimary)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(Color.appSurfaceMuted)
+            .background(Color.appSurfaceBlue)
             .clipShape(Capsule())
         case .onTheWay:
             HStack(spacing: 8) {
@@ -193,7 +200,7 @@ struct PingChatSheet: View {
     private var subtitleText: String {
         switch status {
         case .active:
-            return "Menunggu pedagang mengonfirmasi pingmu…"
+            return "Ping Anda sedang ditinjau oleh pedagang. Tunggu sebentar, kami akan memberi tahu Anda setelah ada konfirmasi."
         case .onTheWay:
             return "Pedagang sudah menerima sinyal dan akan bergerak menuju tempatmu. Temui langsung untuk bertransaksi."
         default:
@@ -307,7 +314,7 @@ struct PingChatSheet: View {
         VStack(spacing: 11) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(["Sudah sampai", "Sebentar lagi", "Pesanan siap"], id: \.self) { chip in
+                    ForEach(["Sesuai titik ya", "Alamat sudah sesuai", "Dimana bang?"], id: \.self) { chip in
                         Button {
                             vm.send(chip)
                         } label: {

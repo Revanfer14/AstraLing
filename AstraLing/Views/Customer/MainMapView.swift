@@ -28,6 +28,7 @@ struct MainMapView: View {
     @State private var selectedMerchant: NearbyMerchant?
     @State private var showScanner = false
     @State private var showPingSuccess = false
+    @State private var showPingLocation = false
     @State private var showActivePings = false
     @State private var showCancelPing = false
 
@@ -97,6 +98,33 @@ struct MainMapView: View {
                             onContinue: { showCancelPing = false }
                         )
                         .presentationBackground(.clear)
+                    }
+                    .fullScreenCover(isPresented: $vm.showPingRejected) {
+                        PingRejectedDialog(
+                            onDismiss: {
+                                vm.showPingRejected = false
+                                selectedMerchant = nil
+                                sheetDetent = .height(360)
+                            }
+                        )
+                        .presentationBackground(.clear)
+                    }
+                    .sheet(isPresented: $showPingLocation) {
+                        if let selected = selectedMerchant {
+                            PingLocationSheet(
+                                initialCoordinate: location.current?.coordinate,
+                                onSend: { coord, note in
+                                    vm.sendPing(to: selected, at: coord, note: note)
+                                    showPingLocation = false
+                                    showPingSuccess = true
+                                },
+                                onCancel: { showPingLocation = false }
+                            )
+                            .presentationDetents([.large])
+                            .presentationDragIndicator(.visible)
+                            .presentationCornerRadius(26)
+                            .presentationBackground(Color.appSurface)
+                        }
                     }
                     .sheet(isPresented: $showActivePings) {
                         ActivePingsSheet(pings: vm.activePings) { pingId in
@@ -351,8 +379,7 @@ struct MainMapView: View {
                         vm.toggleFavorite(selected.id)
                     },
                     onPing: {
-                        vm.sendPing(to: selected)
-                        showPingSuccess = true
+                        showPingLocation = true
                     }
                 )
             }
