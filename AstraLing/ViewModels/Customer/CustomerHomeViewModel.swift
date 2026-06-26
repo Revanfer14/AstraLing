@@ -17,16 +17,18 @@ final class CustomerHomeViewModel: ObservableObject {
     @Published var astraPoints: Int = 0
 
     private let db = Firestore.firestore()
+    private var listener: ListenerRegistration?
 
-    func load() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        do {
-            let doc = try await db.collection("customers").document(uid).getDocument()
-            guard let data = doc.data() else { return }
-            name         = data["name"]         as? String ?? ""
-            balance      = data["balance"]      as? Int    ?? 0
-            astraPoints  = data["astraPoints"]  as? Int    ?? 0
-        } catch {}
+    func load() {
+        guard listener == nil,
+              let uid = Auth.auth().currentUser?.uid else { return }
+        listener = db.collection("customers").document(uid)
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self, let data = snapshot?.data() else { return }
+                self.name        = data["name"]        as? String ?? ""
+                self.balance     = data["balance"]     as? Int    ?? 0
+                self.astraPoints = data["astraPoints"] as? Int    ?? 0
+            }
     }
 
     func topUp() async {
@@ -34,6 +36,9 @@ final class CustomerHomeViewModel: ObservableObject {
         let amount = 50_000
         try? await db.collection("customers").document(uid)
             .updateData(["balance": FieldValue.increment(Int64(amount))])
-        balance += amount
+    }
+
+    deinit {
+        listener?.remove()
     }
 }

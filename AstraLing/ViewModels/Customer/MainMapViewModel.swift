@@ -43,6 +43,7 @@ final class MainMapViewModel: ObservableObject {
     private let radarRadiusMeters: Double = 10000000
     private var listener: ListenerRegistration?
     private var pingsListener: ListenerRegistration?
+    private var customerListener: ListenerRegistration?
     private var rawMerchants: [Merchant] = []
     private var rawPings: [Ping] = []
     private var rawPresence: [MerchantPresence] = []
@@ -56,11 +57,9 @@ final class MainMapViewModel: ObservableObject {
     private let routeRefreshThresholdMeters: Double = 30
 
     func start() {
-        Task {
-            await loadCustomer()
-            attachListener()
-            attachPingsListener()
-        }
+        loadCustomer()
+        attachListener()
+        attachPingsListener()
     }
 
     func setUserLocation(_ loc: CLLocation?) {
@@ -74,6 +73,8 @@ final class MainMapViewModel: ObservableObject {
         listener = nil
         pingsListener?.remove()
         pingsListener = nil
+        customerListener?.remove()
+        customerListener = nil
     }
 
     func isFavorite(_ uid: String) -> Bool { favoriteUids.contains(uid) }
@@ -237,16 +238,18 @@ final class MainMapViewModel: ObservableObject {
         }
     }
 
-    private func loadCustomer() async {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-        do {
-            let doc = try await db.collection("customers").document(uid).getDocument()
-            guard let data = doc.data() else { return }
-            balance = data["balance"] as? Int ?? 0
-            customerName = data["name"] as? String ?? ""
-            let favs = data["favorites"] as? [String] ?? []
-            favoriteUids = Set(favs)
-        } catch {}
+    private func loadCustomer() {
+        guard customerListener == nil,
+              let uid = Auth.auth().currentUser?.uid else { return }
+        customerListener = db.collection("customers").document(uid)
+            .addSnapshotListener { [weak self] snapshot, _ in
+                guard let self, let data = snapshot?.data() else { return }
+                self.balance = data["balance"] as? Int ?? 0
+                self.customerName = data["name"] as? String ?? ""
+                let favs = data["favorites"] as? [String] ?? []
+                self.favoriteUids = Set(favs)
+                self.rebuild()
+            }
     }
 
     private func attachListener() {
