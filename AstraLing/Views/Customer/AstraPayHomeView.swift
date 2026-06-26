@@ -72,7 +72,7 @@ struct AstraPayHomeView: View {
                 selectedRoleRaw = ""
             })
         }
-        .task { await homeVM.load() }
+        .onAppear { homeVM.load() }
         .fullScreenCover(isPresented: $showAstraLing, onDismiss: {
             if openMapAfterOnboarding {
                 openMapAfterOnboarding = false
