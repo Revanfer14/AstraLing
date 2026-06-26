@@ -83,12 +83,6 @@ struct LoginView: View {
                     .font(.footnote)
                     .padding(.top, 4)
                 }
-                .frame(height: 56)
-                .background(authVM.isLoading ? Color.blue.opacity(0.6) : Color.blue)
-                .foregroundStyle(Color.white)
-                .cornerRadius(12)
-                .padding(.top, 8)
-                .disabled(authVM.isLoading || email.isEmpty || password.isEmpty)
                 
 #if DEBUG
                 Button {

@@ -126,6 +126,7 @@ struct KelilingModeView: View {
     )
     @State private var pendingRecenter = false
     @State private var highlightedPingId: String? = nil
+    @State private var previewRoute: [CLLocationCoordinate2D] = []
 #if DEBUG
     @State private var debugOffsetEnabled = false
 #endif
@@ -302,6 +303,9 @@ struct KelilingModeView: View {
             setActivePing(nil)
             highlightedPingId = pingId
             selectedDetent = expandedDetent
+            if let pin = orderedPings.first(where: { $0.id == pingId }) {
+                computePreviewRoute(to: pin)
+            }
         }
     }
     
@@ -323,6 +327,7 @@ struct KelilingModeView: View {
     
     private func setActivePing(_ pin: PinItem?) {
         highlightedPingId = nil
+        previewRoute = []
         merchantVM.clearRoute()
         if let pin = pin {
             chatVM.start(customerUid: pin.customerUid)
@@ -354,11 +359,27 @@ struct KelilingModeView: View {
         }
     }
     
+    private func computePreviewRoute(to pin: PinItem) {
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoordinate))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: pin.coordinate))
+        request.transportType = .walking
+        Task { @MainActor in
+            if let response = try? await MKDirections(request: request).calculate(),
+               let polyline = response.routes.first?.polyline {
+                previewRoute = polyline.coordinates
+            } else {
+                previewRoute = [merchantCoordinate, pin.coordinate]
+            }
+        }
+    }
+
     private var mapLayer: some View {
         let routeCoords: [CLLocationCoordinate2D] = {
             guard let pin = activePing else { return [] }
             return merchantVM.activeRoute.count >= 2 ? merchantVM.activeRoute : [merchantCoordinate, pin.coordinate]
         }()
+        let previewCoords: [CLLocationCoordinate2D] = activePing == nil ? previewRoute : []
         return Map(position: $mapPosition) {
             UserAnnotation()
             if let pin = activePing {
@@ -374,6 +395,10 @@ struct KelilingModeView: View {
                     customerPin(pin)
                 }
             } else {
+                if previewCoords.count >= 2 {
+                    MapPolyline(coordinates: previewCoords)
+                        .stroke(Color.appPrimary.opacity(0.5), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round, dash: [8, 5]))
+                }
                 if isVisible {
                     ForEach(Array(radarRadii.enumerated()), id: \.offset) { index, radius in
                         MapCircle(center: merchantCoordinate, radius: radius)
@@ -402,6 +427,7 @@ struct KelilingModeView: View {
                                 .onTapGesture {
                                     highlightedPingId = pin.id
                                     selectedDetent = expandedDetent
+                                    computePreviewRoute(to: pin)
                                 }
                         }
                     }
