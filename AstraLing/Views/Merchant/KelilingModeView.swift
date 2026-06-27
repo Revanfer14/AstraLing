@@ -129,7 +129,7 @@ struct KelilingModeView: View {
     @State private var previewRoute: [CLLocationCoordinate2D] = []
     @State private var locationNames: [String: String] = [:]
 #if DEBUG
-    @State private var debugOffsetEnabled = false
+    @State private var debugOverride: CLLocationCoordinate2D? = nil
 #endif
     
     @State private var mapPosition: MapCameraPosition = .region(MKCoordinateRegion(
@@ -146,8 +146,7 @@ struct KelilingModeView: View {
     
     private func resolvedCoordinate(_ coord: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
 #if DEBUG
-        guard debugOffsetEnabled else { return coord }
-        return CLLocationCoordinate2D(latitude: coord.latitude + 0.004, longitude: coord.longitude)
+        return debugOverride ?? coord
 #else
         return coord
 #endif
@@ -784,21 +783,25 @@ struct KelilingModeView: View {
             }
 #if DEBUG
             Button {
-                debugOffsetEnabled.toggle()
+                if debugOverride == nil {
+                    debugOverride = location.current?.coordinate.randomNearby()
+                } else {
+                    debugOverride = nil
+                }
                 if isVisible, let current = location.current {
                     Task { await merchantVM.updateLocation(resolvedCoordinate(current.coordinate)) }
                 }
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(debugOffsetEnabled ? Color.appPrimary : Color.white)
+                        .fill(debugOverride != nil ? Color.appPrimary : Color.white)
                         .frame(width: 46, height: 46)
                         .shadow(
                             color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06),
                             radius: 6, x: 0, y: 2
                         )
-                    Image(systemName: "mappin.and.ellipse")
-                        .foregroundStyle(debugOffsetEnabled ? Color.white : Color.appTextPrimary)
+                    Image(systemName: "location.circle.fill")
+                        .foregroundStyle(debugOverride != nil ? Color.white : Color.appTextPrimary)
                         .font(.system(size: 18, weight: .medium))
                 }
             }
