@@ -94,29 +94,6 @@ final class MainMapViewModel: ObservableObject {
         }
     }
 
-    func scatterMerchantsAroundMe() {
-        guard let center = userLocation else { return }
-        let lat = center.coordinate.latitude
-        let lng = center.coordinate.longitude
-        let latRad = lat * .pi / 180
-        for presence in rawPresence {
-            let uid = presence.merchantUid
-            let distance = Double.random(in: 300...600)
-            let bearing = Double.random(in: 0 ..< (2 * .pi))
-            let newLat = lat + (distance * cos(bearing)) / 111_320
-            let newLng = lng + (distance * sin(bearing)) / (111_320 * cos(latRad))
-            Task {
-                try? await db.collection("merchants").document(uid)
-                    .collection("presence").document("live")
-                    .setData([
-                        "location": GeoPoint(latitude: newLat, longitude: newLng),
-                        "geohash": Geohash.encode(latitude: newLat, longitude: newLng),
-                        "locationUpdatedAt": Timestamp(date: Date())
-                    ], merge: true)
-            }
-        }
-    }
-
     private func pushLocation(_ loc: CLLocation) {
         if let last = lastWrittenLocation, loc.distance(from: last) < 25 { return }
         lastWrittenLocation = loc

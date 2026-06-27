@@ -31,6 +31,9 @@ struct MainMapView: View {
     @State private var showPingLocation = false
     @State private var showActivePings = false
     @State private var showCancelPing = false
+#if DEBUG
+    @State private var debugOverride: CLLocationCoordinate2D? = nil
+#endif
 
     private let minSheetHeight: CGFloat = 85
 
@@ -187,13 +190,18 @@ struct MainMapView: View {
 
                 #if DEBUG
                 Button {
-                    vm.scatterMerchantsAroundMe()
+                    if debugOverride == nil {
+                        debugOverride = location.current?.coordinate.randomNearby()
+                    } else {
+                        debugOverride = nil
+                    }
+                    vm.setUserLocation(resolvedLocation(location.current))
                 } label: {
-                    Image(systemName: "mappin.and.ellipse")
+                    Image(systemName: "location.circle.fill")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(.appPrimary)
+                        .foregroundColor(debugOverride != nil ? .white : .appPrimary)
                         .frame(width: 46, height: 46)
-                        .background(Color.appSurface)
+                        .background(debugOverride != nil ? Color.appPrimary : Color.appSurface)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                         .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
                 }
@@ -209,7 +217,7 @@ struct MainMapView: View {
             vm.start()
         }
         .onChange(of: location.current) { _, newLoc in
-            vm.setUserLocation(newLoc)
+            vm.setUserLocation(resolvedLocation(newLoc))
             guard let newLoc, !hasCenteredOnUser else { return }
             hasCenteredOnUser = true
             withAnimation {
@@ -220,6 +228,13 @@ struct MainMapView: View {
             }
         }
         .onDisappear { vm.stop() }
+    }
+
+    private func resolvedLocation(_ loc: CLLocation?) -> CLLocation? {
+#if DEBUG
+        if let o = debugOverride { return CLLocation(latitude: o.latitude, longitude: o.longitude) }
+#endif
+        return loc
     }
 
     private var isFarFromUser: Bool {
