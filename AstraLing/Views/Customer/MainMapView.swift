@@ -29,7 +29,6 @@ struct MainMapView: View {
     @State private var showScanner = false
     @State private var showPingSuccess = false
     @State private var showPingLocation = false
-    @State private var showActivePings = false
     @State private var showCancelPing = false
 #if DEBUG
     @State private var debugOverride: CLLocationCoordinate2D? = nil
@@ -129,15 +128,6 @@ struct MainMapView: View {
                             .presentationBackground(Color.appSurface)
                         }
                     }
-                    .sheet(isPresented: $showActivePings) {
-                        ActivePingsSheet(pings: vm.activePings) { pingId in
-                            vm.cancelPing(pingId: pingId)
-                        }
-                        .presentationDetents([.medium, .large])
-                        .presentationDragIndicator(.visible)
-                        .presentationCornerRadius(26)
-                        .presentationBackground(Color.appSurface)
-                    }
             }
 
             topBar
@@ -163,31 +153,6 @@ struct MainMapView: View {
         }
         .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 12) {
-                if !vm.activePings.isEmpty {
-                    Button {
-                        showActivePings = true
-                    } label: {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "hand.rays.fill")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.appPrimary)
-                                .frame(width: 46, height: 46)
-                                .background(Color.appSurface)
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                                .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
-
-                            Text("\(vm.activePings.count)")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 18, height: 18)
-                                .background(Color.appPrimary)
-                                .clipShape(Circle())
-                                .offset(x: 6, y: -6)
-                        }
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                }
-
                 #if DEBUG
                 Button {
                     if debugOverride == nil {
