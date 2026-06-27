@@ -101,6 +101,11 @@ struct PingChatSheet: View {
                 Spacer()
 
                 Menu {
+                    Button(role: .destructive) {
+                        onRequestCancel()
+                    } label: {
+                        Label("Batalkan Ping", systemImage: "xmark.circle")
+                    }
                     Button {
                         onToggleFavorite()
                     } label: {
@@ -108,11 +113,6 @@ struct PingChatSheet: View {
                             isFavorite ? "Hapus dari favorit" : "Tambah ke favorit",
                             systemImage: isFavorite ? "heart.fill" : "heart"
                         )
-                    }
-                    Button(role: .destructive) {
-                        onRequestCancel()
-                    } label: {
-                        Label("Batalkan Ping", systemImage: "xmark.circle")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
