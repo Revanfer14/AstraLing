@@ -209,11 +209,16 @@ final class MainMapViewModel: ObservableObject {
         guard let id else { return }
         Task {
             do {
-                try await db.collection("pings").document(id).updateData([
+                let pingRef = db.collection("pings").document(id)
+                let snap = try? await pingRef.getDocument()
+                try await pingRef.updateData([
                     "status": PingStatus.cancelled.rawValue,
                     "updatedAt": Timestamp(date: Date())
                 ])
                 if id == lastPingId { lastPingId = nil }
+                if let ping = try? snap?.data(as: Ping.self) {
+                    await ChatCleanup.deleteChat(db: db, customerUid: ping.customerUid, merchantUid: ping.merchantUid)
+                }
             } catch {
                 print("cancelPing: FAILED \(error)")
             }

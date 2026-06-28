@@ -193,11 +193,12 @@ final class MerchantViewModel: ObservableObject {
 
     func transaction(for id: String) -> Transaction? { receivedTransactions[id] }
 
-    func completePing(pingId: String) async {
+    func completePing(pingId: String, customerUid: String) async {
         try? await db.collection("pings").document(pingId).updateData([
             "status": PingStatus.completed.rawValue,
             "updatedAt": Timestamp(date: Date())
         ])
+        if let uid { await ChatCleanup.deleteChat(db: db, customerUid: customerUid, merchantUid: uid) }
     }
 
     func goOfflineBestEffort() {
@@ -440,5 +441,6 @@ final class MerchantViewModel: ObservableObject {
             "status": PingStatus.rejected.rawValue,
             "updatedAt": Timestamp(date: Date())
         ])
+        await ChatCleanup.deleteChat(db: db, customerUid: ping.customerUid, merchantUid: ping.merchantUid)
     }
 }

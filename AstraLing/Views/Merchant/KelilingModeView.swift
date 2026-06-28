@@ -1113,7 +1113,7 @@ struct KelilingModeView: View {
                         .padding(.horizontal, 18)
 
                         SlideToCompleteButton {
-                            Task { await merchantVM.completePing(pingId: pin.id) }
+                            Task { await merchantVM.completePing(pingId: pin.id, customerUid: pin.customerUid) }
                             setActivePing(nil)
                         }
                         .padding(.horizontal, 18)
