@@ -393,7 +393,22 @@ struct KelilingModeView: View {
         }
     }
 
+    private func frameRoute(to pin: PinItem) {
+        let lats = [merchantCoordinate.latitude, pin.coordinate.latitude]
+        let lons = [merchantCoordinate.longitude, pin.coordinate.longitude]
+        let spanLat = max((lats.max()! - lats.min()!) * 3.5, 0.006)
+        let spanLon = max((lons.max()! - lons.min()!) * 3.5, 0.006)
+        withAnimation {
+            mapPosition = .region(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: (lats.min()! + lats.max()!) / 2,
+                                               longitude: (lons.min()! + lons.max()!) / 2),
+                span: MKCoordinateSpan(latitudeDelta: spanLat, longitudeDelta: spanLon)
+            ))
+        }
+    }
+
     private func computePreviewRoute(to pin: PinItem) {
+        frameRoute(to: pin)
         let request = MKDirections.Request()
         request.source = MKMapItem(placemark: MKPlacemark(coordinate: merchantCoordinate))
         request.destination = MKMapItem(placemark: MKPlacemark(coordinate: pin.coordinate))
@@ -440,7 +455,7 @@ struct KelilingModeView: View {
             } else {
                 if previewCoords.count >= 2 {
                     MapPolyline(coordinates: previewCoords)
-                        .stroke(Color.appPrimary.opacity(0.5), style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round, dash: [8, 5]))
+                        .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
                 }
                 if isVisible {
                     ForEach(Array(radarRadii.enumerated()), id: \.offset) { index, radius in
@@ -484,6 +499,14 @@ struct KelilingModeView: View {
         }
         .mapStyle(.standard(elevation: .flat))
         .mapControls {}
+        .onTapGesture {
+            if !previewRoute.isEmpty || highlightedPingId != nil {
+                withAnimation {
+                    previewRoute = []
+                    highlightedPingId = nil
+                }
+            }
+        }
         .onMapCameraChange(frequency: .continuous) { context in
             currentRegion = context.region
         }
@@ -921,11 +944,9 @@ struct KelilingModeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    if !isServing {
-                        highlightedPingId = pin.id
-                        selectedDetent = expandedDetent
-                        computePreviewRoute(to: pin)
-                    }
+                    highlightedPingId = pin.id
+                    selectedDetent = expandedDetent
+                    computePreviewRoute(to: pin)
                 }
 
                 if isServing {
