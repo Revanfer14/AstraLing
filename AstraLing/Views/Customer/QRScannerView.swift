@@ -65,6 +65,7 @@ struct QRScannerView: View {
             let uid = payload.hasPrefix(prefix)
                 ? String(payload.dropFirst(prefix.count))
                 : payload
+            Haptics.success()
             scannedItem = ScannedPayload(merchantUid: uid, rawPayload: payload)
         }
         .fullScreenCover(item: $scannedItem, onDismiss: {

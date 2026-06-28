@@ -56,6 +56,7 @@ struct TransaksiBerhasilView: View {
         .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
         .ignoresSafeArea()
+        .onAppear { Haptics.success() }
     }
 
     private var heroSection: some View {

@@ -301,6 +301,7 @@ struct TransferSaldoView: View {
                     successResult = result
                     showSuccess = true
                 } else {
+                    Haptics.error()
                     showError = true
                 }
             }

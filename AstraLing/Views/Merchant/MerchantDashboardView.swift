@@ -71,6 +71,7 @@ struct MerchantDashboardView: View {
                     .padding(.horizontal, 16)
 
                 Button {
+                    Haptics.warning()
                     Task {
                         await merchantVM.setVisible(false)
                         authViewModel.logout()

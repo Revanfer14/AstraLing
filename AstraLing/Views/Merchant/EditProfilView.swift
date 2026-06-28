@@ -163,6 +163,7 @@ struct EditProfilView: View {
 
                 if hasPhoto {
                     Button {
+                        Haptics.warning()
                         if selectedBannerImage != nil {
                             selectedBannerImage = nil
                         } else {
@@ -289,6 +290,7 @@ struct EditProfilView: View {
                     bannerImage: selectedBannerImage
                 )
                 if merchantVM.errorMessage == nil {
+                    Haptics.success()
                     withAnimation { showSavedToast = true }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                         withAnimation { showSavedToast = false }

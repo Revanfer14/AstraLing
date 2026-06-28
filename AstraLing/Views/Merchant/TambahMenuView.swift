@@ -103,7 +103,10 @@ struct TambahMenuView: View {
                     guard !name.isEmpty, price > 0 else { return }
                     Task {
                         await merchantVM.addMenuItem(name: name, price: price, image: selectedPhoto)
-                        if merchantVM.errorMessage == nil { dismiss() }
+                        if merchantVM.errorMessage == nil {
+                            Haptics.success()
+                            dismiss()
+                        }
                     }
                 } label: {
                     Group {

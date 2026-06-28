@@ -172,6 +172,7 @@ struct QRSayaView: View {
         HStack(spacing: 16) {
             Button {
                 UIImageWriteToSavedPhotosAlbum(brandedQRImage, nil, nil, nil)
+                Haptics.success()
                 withAnimation { savedToPhotos = true }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                     withAnimation { savedToPhotos = false }

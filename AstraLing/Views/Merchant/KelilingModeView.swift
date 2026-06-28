@@ -73,7 +73,11 @@ private struct SlideToCompleteButton: View {
                 .gesture(
                     DragGesture()
                         .onChanged { value in
+                            let prev = dragOffset
                             dragOffset = min(max(0, value.translation.width), maxDrag)
+                            if prev < maxDrag * 0.7 && dragOffset >= maxDrag * 0.7 {
+                                Haptics.impact(.rigid)
+                            }
                         }
                         .onEnded { _ in
                             if dragOffset >= maxDrag * 0.7 {
@@ -322,10 +326,12 @@ struct KelilingModeView: View {
                 }
             )
             .presentationBackground(.clear)
+            .onAppear { Haptics.warning() }
         }
         .fullScreenCover(item: $merchantVM.cancelledPingAlert) { _ in
             PingCancelledDialog(onDismiss: { merchantVM.cancelledPingAlert = nil })
                 .presentationBackground(.clear)
+                .onAppear { Haptics.warning() }
         }
         .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
             guard let txnId = notification.object as? String,
@@ -753,6 +759,7 @@ struct KelilingModeView: View {
                     get: { isVisible },
                     set: { newValue in
                         isVisible = newValue
+                        Haptics.impact(newValue ? .medium : .light)
                         Task {
                             await merchantVM.setVisible(newValue)
                             if newValue, let current = location.current {
@@ -968,6 +975,7 @@ struct KelilingModeView: View {
                             if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
                                 Task { await merchantVM.accept(ping) }
                             }
+                            Haptics.success()
                             setActivePing(pin)
                         } label: {
                             ZStack {
@@ -981,6 +989,7 @@ struct KelilingModeView: View {
                         }
 
                         Button {
+                            Haptics.warning()
                             if let ping = merchantVM.activePings.first(where: { ($0.id ?? $0.customerUid) == pin.id }) {
                                 Task { await merchantVM.reject(ping) }
                             }
@@ -1134,6 +1143,7 @@ struct KelilingModeView: View {
                         .padding(.horizontal, 18)
 
                         SlideToCompleteButton {
+                            Haptics.success()
                             Task { await merchantVM.completePing(pingId: pin.id, customerUid: pin.customerUid) }
                             setActivePing(nil)
                         }

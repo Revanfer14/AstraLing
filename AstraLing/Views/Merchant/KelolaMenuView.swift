@@ -180,6 +180,7 @@ struct KelolaMenuView: View {
 
                     if item.photoUrl != nil {
                         Button {
+                            Haptics.warning()
                             Task { await merchantVM.deleteMenuItemPhoto(id: id) }
                         } label: {
                             ZStack {
@@ -265,6 +266,7 @@ struct KelolaMenuView: View {
                     Task { await merchantVM.setMenuItemStatus(id: id, status: .habis) }
                 }
                 Button {
+                    Haptics.warning()
                     Task { await merchantVM.deleteMenuItem(id: id) }
                 } label: {
                     Image(systemName: "trash.fill")
