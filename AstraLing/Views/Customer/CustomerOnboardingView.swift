@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct CustomerOnboardingView: View {
     let onStart: () -> Void
@@ -15,6 +16,8 @@ struct CustomerOnboardingView: View {
         ("Kirim Ping untuk beri tahu kamu ingin mampir.", "onboarding_cust_2"),
         ("Datangi pedagang dan lakukan pembayaran.", "onboarding_cust_3")
     ]
+
+    private let timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     @AppStorage("hasSeenAstraLingOnboarding") private var hasSeenAstraLingOnboarding = false
     @State private var selection = 0
@@ -88,6 +91,11 @@ struct CustomerOnboardingView: View {
             }
         }
         .onAppear { hasSeenAstraLingOnboarding = true }
+        .onReceive(timer) { _ in
+            withAnimation(.easeInOut) {
+                selection = (selection + 1) % slides.count
+            }
+        }
     }
 }
 

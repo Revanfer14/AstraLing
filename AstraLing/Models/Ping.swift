@@ -5,12 +5,13 @@ enum PingStatus: String, Codable {
     case onTheWay = "on_the_way"
     case completed
     case cancelled
+    case rejected
 }
 
 /// `pings/{pingId}` — a customer signalling "I'm coming" to a merchant.
 ///
-/// Status lifecycle: active → on_the_way → completed | cancelled
-struct Ping: Codable {
+/// Status lifecycle: active → on_the_way → completed | cancelled | rejected
+struct Ping: Identifiable, Codable {
     @DocumentID var id: String?
     var customerUid: String
     var merchantUid: String
