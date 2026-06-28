@@ -291,6 +291,7 @@ struct EditProfilView: View {
                 )
                 if merchantVM.errorMessage == nil {
                     Haptics.success()
+                    Sound.success()
                     withAnimation { showSavedToast = true }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                         withAnimation { showSavedToast = false }

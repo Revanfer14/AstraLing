@@ -326,12 +326,18 @@ struct KelilingModeView: View {
                 }
             )
             .presentationBackground(.clear)
-            .onAppear { Haptics.warning() }
+            .onAppear {
+                Haptics.warning()
+                Sound.notification()
+            }
         }
         .fullScreenCover(item: $merchantVM.cancelledPingAlert) { _ in
             PingCancelledDialog(onDismiss: { merchantVM.cancelledPingAlert = nil })
                 .presentationBackground(.clear)
-                .onAppear { Haptics.warning() }
+                .onAppear {
+                    Haptics.warning()
+                    Sound.notification()
+                }
         }
         .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
             guard let txnId = notification.object as? String,

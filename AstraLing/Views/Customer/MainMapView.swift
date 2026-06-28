@@ -87,6 +87,7 @@ struct MainMapView: View {
                             }
                         )
                         .presentationBackground(.clear)
+                        .onAppear { Sound.success() }
                     }
                     .fullScreenCover(isPresented: $showCancelPing) {
                         CancelPingDialog(
@@ -102,6 +103,7 @@ struct MainMapView: View {
                             onContinue: { showCancelPing = false }
                         )
                         .presentationBackground(.clear)
+                        .onAppear { Sound.notification() }
                     }
                     .fullScreenCover(isPresented: $vm.showPingRejected) {
                         PingRejectedDialog(
@@ -112,7 +114,10 @@ struct MainMapView: View {
                             }
                         )
                         .presentationBackground(.clear)
-                        .onAppear { Haptics.warning() }
+                        .onAppear {
+                            Haptics.warning()
+                            Sound.notification()
+                        }
                     }
                     .sheet(isPresented: $showPingLocation) {
                         if let selected = selectedMerchant {

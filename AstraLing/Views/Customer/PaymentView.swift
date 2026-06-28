@@ -226,9 +226,11 @@ struct PaymentView: View {
                 }
                 if success {
                     Haptics.success()
+                    Sound.success()
                     phase = .success
                 } else {
                     Haptics.error()
+                    Sound.error()
                     phase = .input
                     showError = true
                 }
