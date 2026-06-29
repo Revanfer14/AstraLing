@@ -100,12 +100,16 @@ private enum FullScreenDestination: Identifiable {
     case dashboard
     case editProfile
     case transactionSuccess(Transaction)
+    case newPing(Ping)
+    case cancelledPing(Ping)
 
     var id: String {
         switch self {
         case .dashboard: return "dashboard"
         case .editProfile: return "editProfile"
         case .transactionSuccess(let t): return "txn_\(t.id ?? UUID().uuidString)"
+        case .newPing(let p): return "newPing_\(p.id ?? UUID().uuidString)"
+        case .cancelledPing(let p): return "cancelledPing_\(p.id ?? UUID().uuidString)"
         }
     }
 }
@@ -312,33 +316,6 @@ struct KelilingModeView: View {
             get: { isVisible ? nil : fullScreen },
             set: { fullScreen = $0 }
         )) { fullScreenContent($0) }
-        .fullScreenCover(item: $merchantVM.newPingAlert) { ping in
-            NewPingDialog(
-                customerName: ping.customerName,
-                coordinate: CLLocationCoordinate2D(
-                    latitude: ping.customerLocation.latitude,
-                    longitude: ping.customerLocation.longitude
-                ),
-                onQueue: { merchantVM.newPingAlert = nil },
-                onReject: {
-                    Task { await merchantVM.reject(ping) }
-                    merchantVM.newPingAlert = nil
-                }
-            )
-            .presentationBackground(.clear)
-            .onAppear {
-                Haptics.warning()
-                Sound.notification()
-            }
-        }
-        .fullScreenCover(item: $merchantVM.cancelledPingAlert) { _ in
-            PingCancelledDialog(onDismiss: { merchantVM.cancelledPingAlert = nil })
-                .presentationBackground(.clear)
-                .onAppear {
-                    Haptics.warning()
-                    Sound.notification()
-                }
-        }
         .onReceive(NotificationCenter.default.publisher(for: .transactionNotificationTapped)) { notification in
             guard let txnId = notification.object as? String,
                   let txn = merchantVM.transaction(for: txnId) else { return }
@@ -352,6 +329,12 @@ struct KelilingModeView: View {
             if let pin = orderedPings.first(where: { $0.id == pingId }) {
                 computePreviewRoute(to: pin)
             }
+        }
+        .onReceive(merchantVM.$cancelledPingAlert.compactMap { $0 }) { ping in
+            fullScreen = .cancelledPing(ping)
+        }
+        .onReceive(merchantVM.$newPingAlert.compactMap { $0 }) { ping in
+            fullScreen = .newPing(ping)
         }
     }
 
@@ -368,6 +351,38 @@ struct KelilingModeView: View {
             }
         case .transactionSuccess(let txn):
             TransaksiBerhasilView(transaction: txn)
+        case .newPing(let ping):
+            NewPingDialog(
+                customerName: ping.customerName,
+                coordinate: CLLocationCoordinate2D(
+                    latitude: ping.customerLocation.latitude,
+                    longitude: ping.customerLocation.longitude
+                ),
+                onQueue: {
+                    merchantVM.newPingAlert = nil
+                    fullScreen = nil
+                },
+                onReject: {
+                    Task { await merchantVM.reject(ping) }
+                    merchantVM.newPingAlert = nil
+                    fullScreen = nil
+                }
+            )
+            .presentationBackground(.clear)
+            .onAppear {
+                Haptics.warning()
+                Sound.notification()
+            }
+        case .cancelledPing:
+            PingCancelledDialog(onDismiss: {
+                merchantVM.cancelledPingAlert = nil
+                fullScreen = nil
+            })
+            .presentationBackground(.clear)
+            .onAppear {
+                Haptics.warning()
+                Sound.notification()
+            }
         }
     }
 
