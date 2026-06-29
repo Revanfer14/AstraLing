@@ -133,8 +133,8 @@ struct MainMapView: View {
             topBar
         }
         .ignoresSafeArea(edges: .top)
-        .overlay(alignment: .bottomTrailing) {
-            if isFarFromUser {
+        .overlay(alignment: .topTrailing) {
+            if !isFarFromUser {
                 Button {
                     recenterOnUser()
                 } label: {
@@ -147,7 +147,7 @@ struct MainMapView: View {
                         .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
                 }
                 .padding(.trailing, 24)
-                .padding(.bottom, minSheetHeight + 16)
+                .padding(.top, minSheetHeight + 16)
                 .transition(.opacity)
             }
         }
