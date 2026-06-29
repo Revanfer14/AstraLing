@@ -55,7 +55,7 @@ struct CustomerOnboardingView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(maxHeight: .infinity)
+                .frame(height: 470)
                 .animation(.easeInOut, value: selection)
 
                 HStack(spacing: 5) {

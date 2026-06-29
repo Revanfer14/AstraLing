@@ -9,6 +9,7 @@ import SwiftUI
 import MapKit
 import UIKit
 import FirebaseFirestore
+import Combine
 
 private struct PinItem: Identifiable {
     let id: String
