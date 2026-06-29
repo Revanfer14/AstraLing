@@ -957,9 +957,16 @@ struct KelilingModeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    highlightedPingId = pin.id
-                    selectedDetent = expandedDetent
-                    computePreviewRoute(to: pin)
+                    if highlightedPingId == pin.id {
+                        withAnimation {
+                            previewRoute = []
+                            highlightedPingId = nil
+                        }
+                    } else {
+                        highlightedPingId = pin.id
+                        selectedDetent = expandedDetent
+                        computePreviewRoute(to: pin)
+                    }
                 }
 
                 if isServing {
