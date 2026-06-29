@@ -45,7 +45,7 @@ struct AstraPayHomeView: View {
                                 balance: homeVM.balance,
                                 astraPoints: homeVM.astraPoints,
                                 onAstraPoints: openAstraPoints,
-                                onTopUp: { Task { await homeVM.topUp() } }
+                                onTopUp: { Task { await homeVM.topUp(); Haptics.success() } }
                             )
                             .padding(.top, -20)
 
@@ -68,6 +68,7 @@ struct AstraPayHomeView: View {
             }
 
             CustomerTabBar(selection: $selectedTab, onProfil: {
+                Haptics.warning()
                 authViewModel.logout()
                 selectedRoleRaw = ""
             })

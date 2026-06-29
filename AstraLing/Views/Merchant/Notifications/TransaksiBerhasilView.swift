@@ -56,6 +56,10 @@ struct TransaksiBerhasilView: View {
         .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
         .ignoresSafeArea()
+        .onAppear {
+            Haptics.success()
+            Sound.success()
+        }
     }
 
     private var heroSection: some View {
@@ -66,19 +70,19 @@ struct TransaksiBerhasilView: View {
                         .fill(Color.white)
                         .frame(width: 64, height: 64)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.app(.s26, weight: .bold))
                         .foregroundStyle(greenDark)
                 }
             }
             .padding(.top , 54)
 
             Text("Pembayaran Berhasil")
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(Color.white)
                 .padding(.top, 9)
 
             Text("Dana sudah masuk ke saldo usahamu")
-                .font(.system(size: 13))
+                .font(.app(.s14))
                 .foregroundStyle(Color.white.opacity(0.92))
         }
         .padding(.top, 4)
@@ -100,20 +104,20 @@ struct TransaksiBerhasilView: View {
     private var amountCard: some View {
         VStack(spacing: 4) {
             Text("Nominal diterima")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
 
             Text(transaction.amount.rupiah)
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(darkText)
                 .padding(.bottom, 7)
 
             HStack(spacing: 6) {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.app(.s12, weight: .semibold))
                     .foregroundStyle(greenDark)
                 Text("Masuk ke saldo usaha")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(greenDark)
             }
             .padding(.horizontal, 12)
@@ -150,11 +154,11 @@ struct TransaksiBerhasilView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(label)
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(greyText)
                 Spacer()
                 Text(value)
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(darkText)
             }
             .padding(.vertical, 13)
@@ -172,7 +176,7 @@ struct TransaksiBerhasilView: View {
             dismiss()
         } label: {
             Text("Kembali")
-                .font(.system(size: 16, weight: .bold))
+                .font(.app(.s16, weight: .bold))
                 .foregroundStyle(Color.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
@@ -186,13 +190,11 @@ struct TransaksiBerhasilView: View {
     private var footerHint: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
             Text("Pembayaran dari \(customerName) telah diterima")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
         }
     }
 }
-
-

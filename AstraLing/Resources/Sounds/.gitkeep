@@ -1,0 +1,40 @@
+
+
+; New file: AstraLing/Utilities/Sound.swift
+; A caseless enum Sound mirroring the Haptics pattern — three public static functions (success(), notification(), error()) backed by a private play(_:systemFallback:) that:
+; 1. Searches Resources/Sounds/ in the bundle for a named file (success, alert, error) in any of four formats (.caf, .wav, .mp3, .aiff)
+; 2. Plays it via AVAudioPlayer (retained in a [String: AVAudioPlayer] dict so it doesn't deallocate mid-playback)
+; 3. Falls back to AudioServicesPlaySystemSound with a built-in iOS system sound ID if the file is missing or fails to decode
+
+; New folder: AstraLing/Resources/Sounds/ (with .gitkeep so it's tracked by git and picked up by Xcode's folder-sync). Drop success.caf, alert.caf, and/or error.caf here any time — no code changes needed.
+
+; Sound calls wired to every notification / pop-up dialog:
+
+; ┌───────────────────────────────────────────┬──────────────────────┐
+; │                  Surface                  │         Call         │
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ NewPingDialog appears (Merchant)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ PingCancelledDialog appears (Merchant)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ PingRejectedDialog appears (Customer)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ PingSuccessDialog appears (Customer)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ CancelPingDialog appears (Customer)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ Payment success (PaymentView)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ Payment failed alert (PaymentView)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ Payment received (TransaksiBerhasilView)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ Transfer success (TransferBerhasilView)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ Transfer failed alert (TransferSaldoView
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ Profile saved toast (EditProfilView)
+; ├───────────────────────────────────────────┼──────────────────────┤
+; │ QR saved toast (QRSayaView)
+; └───────────────────────────────────────────┴──────────────────────┘                                               
+; Mute-switch behavior: respects the silent switch — no AVAudioSession override, so it works in parallel with the QR camera without interference. Haptics still is never fully lost.

@@ -53,6 +53,10 @@ struct TransferBerhasilView: View {
         .background(Color.appBackground.ignoresSafeArea())
         .navigationBarHidden(true)
         .ignoresSafeArea()
+        .onAppear {
+            Haptics.success()
+            Sound.success()
+        }
     }
 
     private var heroSection: some View {
@@ -66,19 +70,19 @@ struct TransferBerhasilView: View {
                         .fill(Color.white)
                         .frame(width: 64, height: 64)
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 34))
+                        .font(.app(.s34))
                         .foregroundStyle(blue)
                 }
             }
             .padding(.top , 54)
 
             Text("Transfer Berhasil")
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(Color.white)
                 .padding(.top, 9)
 
             Text("Saldo sudah masuk ke AstraPay-mu")
-                .font(.system(size: 13))
+                .font(.app(.s14))
                 .foregroundStyle(Color.white.opacity(0.92))
         }
         .padding(.top, 4)
@@ -99,20 +103,20 @@ struct TransferBerhasilView: View {
     private var amountCard: some View {
         VStack(spacing: 4) {
             Text("Nominal ditransfer")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
 
             Text(amount.rupiah)
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(darkText)
                 .padding(.bottom, 7)
 
             HStack(spacing: 6) {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.app(.s12, weight: .semibold))
                     .foregroundStyle(blue)
                 Text("Masuk ke AstraPay pribadi")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(blue)
             }
             .padding(.horizontal, 12)
@@ -149,11 +153,11 @@ struct TransferBerhasilView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(label)
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(greyText)
                 Spacer()
                 Text(value)
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(darkText)
                     .multilineTextAlignment(.trailing)
             }
@@ -171,9 +175,9 @@ struct TransferBerhasilView: View {
         Button { dismiss() } label: {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.app(.s16, weight: .bold))
                 Text("Selesai")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.app(.s16, weight: .bold))
             }
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
@@ -185,10 +189,10 @@ struct TransferBerhasilView: View {
     private var footerHint: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
             Text("Saldo bisa langsung dipakai di AstraPay")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(greyText)
         }
     }

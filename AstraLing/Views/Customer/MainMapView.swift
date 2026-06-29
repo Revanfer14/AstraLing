@@ -80,16 +80,19 @@ struct MainMapView: View {
                                 sheetDetent = .height(minSheetHeight)
                             },
                             onCancel: {
+                                Haptics.warning()
                                 vm.cancelPing()
                                 showPingSuccess = false
                                 selectedMerchant = nil
                             }
                         )
                         .presentationBackground(.clear)
+                        .onAppear { Sound.success() }
                     }
                     .fullScreenCover(isPresented: $showCancelPing) {
                         CancelPingDialog(
                             onCancelPing: {
+                                Haptics.warning()
                                 if let s = selectedMerchant, let a = vm.activePing(for: s.id) {
                                     vm.cancelPing(pingId: a.id)
                                 }
@@ -100,6 +103,7 @@ struct MainMapView: View {
                             onContinue: { showCancelPing = false }
                         )
                         .presentationBackground(.clear)
+                        .onAppear { Sound.notification() }
                     }
                     .fullScreenCover(isPresented: $vm.showPingRejected) {
                         PingRejectedDialog(
@@ -110,6 +114,10 @@ struct MainMapView: View {
                             }
                         )
                         .presentationBackground(.clear)
+                        .onAppear {
+                            Haptics.warning()
+                            Sound.notification()
+                        }
                     }
                     .sheet(isPresented: $showPingLocation) {
                         if let selected = selectedMerchant {
@@ -118,6 +126,7 @@ struct MainMapView: View {
                                 onSend: { coord, note in
                                     vm.sendPing(to: selected, at: coord, note: note)
                                     showPingLocation = false
+                                    Haptics.success()
                                     showPingSuccess = true
                                 },
                                 onCancel: { showPingLocation = false }

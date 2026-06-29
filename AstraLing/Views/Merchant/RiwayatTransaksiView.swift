@@ -64,16 +64,16 @@ struct RiwayatTransaksiView: View {
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(Color.appTextPrimary)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Riwayat Transaksi")
-                    .font(.system(size: 18))
+                    .font(.app(.s18))
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Semua pemasukan & penarikan")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(Color.appTextTertiary)
             }
 
@@ -87,10 +87,10 @@ struct RiwayatTransaksiView: View {
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(txnVM.summaryTotal(days: selectedPeriod.days).rupiah)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.app(.s24, weight: .bold))
                         .foregroundStyle(Color.appTextPrimary)
                     Text("Total masuk · \(txnVM.summaryCount(days: selectedPeriod.days)) transaksi")
-                        .font(.system(size: 12))
+                        .font(.app(.s12))
                         .foregroundStyle(Color.appTextTertiary)
                 }
                 Spacer()
@@ -102,7 +102,7 @@ struct RiwayatTransaksiView: View {
                         selectedPeriod = period
                     } label: {
                         Text(period.label)
-                            .font(.system(size: 11.5, weight: selectedPeriod == period ? .semibold : .regular))
+                            .font(.app(.s12, weight: selectedPeriod == period ? .semibold : .regular))
                             .foregroundStyle(selectedPeriod == period ? Color.white : Color.appPrimary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
@@ -126,13 +126,13 @@ struct RiwayatTransaksiView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "doc.text")
-                .font(.system(size: 40))
+                .font(.app(.s40))
                 .foregroundStyle(Color.appTextTertiary)
             Text("Belum ada transaksi")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.app(.s16, weight: .semibold))
                 .foregroundStyle(Color.appTextSecondary)
             Text("Transaksi dari pelanggan akan muncul di sini")
-                .font(.system(size: 13))
+                .font(.app(.s14))
                 .foregroundStyle(Color.appTextTertiary)
                 .multilineTextAlignment(.center)
         }
@@ -141,11 +141,11 @@ struct RiwayatTransaksiView: View {
     private func sectionHeader(label: String, total: Int) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
             Spacer()
             Text("+ \(total.rupiah)")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextSecondary)
         }
         .padding(.top, 8)
@@ -180,10 +180,10 @@ struct RiwayatTransaksiView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(name)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.app(.s14, weight: .bold))
                         .foregroundStyle(Color.appTextPrimary)
                     Text("\(TransactionViewModel.timeString(txn.createdAt)) · \(txn.method)")
-                        .font(.system(size: 11.5))
+                        .font(.app(.s12))
                         .foregroundStyle(Color.appTextTertiary)
                 }
 
@@ -191,14 +191,14 @@ struct RiwayatTransaksiView: View {
 
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(amountStr)
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.app(.s16, weight: .bold))
                         .foregroundStyle(
                             isIncome
                                 ? Color.appSuccess
                                 : Color(red: 0.851, green: 0, blue: 0)
                         )
                     Text(txn.status == .success ? "Berhasil" : "Gagal")
-                        .font(.system(size: 10))
+                        .font(.app(.s12))
                         .foregroundStyle(Color.appTextTertiary)
                 }
             }
@@ -223,12 +223,12 @@ struct RiwayatTransaksiView: View {
 
             if isIncome {
                 Text("QRIS")
-                    .font(.system(size: 11))
+                    .font(.app(.s12))
                     .foregroundStyle(Color.appSuccess)
             } else {
                 Image(systemName: "arrow.up")
                     .foregroundStyle(Color.appPrimary)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.app(.s16, weight: .semibold))
             }
         }
     }

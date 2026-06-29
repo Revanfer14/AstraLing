@@ -104,15 +104,15 @@ struct TransferSaldoView: View {
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(Color.appTextPrimary)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Transfer Saldo")
-                    .font(.system(size: 18).bold())
+                    .font(.app(.s18, weight: .bold))
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Pindahkan saldo usaha ke AstraPay-mu")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(Color.appTextTertiary)
             }
         }
@@ -121,12 +121,12 @@ struct TransferSaldoView: View {
     private var amountCard: some View {
         VStack(spacing: 6) {
             Text("Masukan Jumlah")
-                .font(.system(size: 12))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
 
             ZStack {
                 Text(displayAmount)
-                    .font(.system(size: 36, weight: .bold))
+                    .font(.app(.s36, weight: .bold))
                     .foregroundStyle(
                         currentAmount > 0
                             ? Color.appTextPrimary
@@ -155,7 +155,7 @@ struct TransferSaldoView: View {
             .onTapGesture { amountFocused = true }
 
             Text("Saldo usaha tersedia \(formatRupiah(availableBalance))")
-                .font(.system(size: 11.5))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appPrimary)
         }
         .frame(maxWidth: .infinity)
@@ -178,7 +178,7 @@ struct TransferSaldoView: View {
                     amountFocused = false
                 } label: {
                     Text(chip.label)
-                        .font(.system(size: 13))
+                        .font(.app(.s14))
                         .foregroundStyle(Color.appPrimary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 11)
@@ -194,7 +194,7 @@ struct TransferSaldoView: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 12))
+            .font(.app(.s12))
             .foregroundStyle(Color.appTextTertiary)
             .kerning(0.3)
             .padding(.top, 10)
@@ -208,19 +208,19 @@ struct TransferSaldoView: View {
                     .frame(width: 46, height: 46)
                 Image(systemName: "house.fill")
                     .foregroundStyle(.white)
-                    .font(.system(size: 18))
+                    .font(.app(.s18))
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text("AstraPay Saya")
-                    .font(.system(size: 14.5))
+                    .font(.app(.s14))
                     .foregroundStyle(Color.appTextPrimary)
                 Text(merchantVM.merchant?.name ?? "Merchant")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(Color.appTextTertiary)
             }
             Spacer()
             Text("Pribadi")
-                .font(.system(size: 10))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appPrimary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -239,31 +239,31 @@ struct TransferSaldoView: View {
         VStack(spacing: 10) {
             HStack {
                 Text("Nominal")
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(Color.appTextTertiary)
                 Spacer()
                 Text(displayAmount)
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(Color.appTextPrimary)
             }
             HStack {
                 Text("Biaya transfer")
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(Color.appTextTertiary)
                 Spacer()
                 Text("Gratis")
-                    .font(.system(size: 13.5))
+                    .font(.app(.s14))
                     .foregroundStyle(Color.appSuccess)
             }
             .padding(.bottom, 2)
             Rectangle().fill(Color.appDivider).frame(height: 1)
             HStack {
                 Text("Masuk ke AstraPay")
-                    .font(.system(size: 15))
+                    .font(.app(.s16))
                     .foregroundStyle(Color.appTextPrimary)
                 Spacer()
                 Text(displayAmount)
-                    .font(.system(size: 15))
+                    .font(.app(.s16))
                     .foregroundStyle(Color.appPrimary)
             }
             .padding(.top, 2)
@@ -280,7 +280,7 @@ struct TransferSaldoView: View {
 
     private var infoBox: some View {
         Text("Saldo langsung masuk ke AstraPay pribadimu, bisa dipakai bayar atau tarik tunai kapan saja.")
-            .font(.system(size: 13))
+            .font(.app(.s14))
             .foregroundStyle(Color.appSuccess)
             .lineSpacing(5.5)
             .fixedSize(horizontal: false, vertical: true)
@@ -301,6 +301,8 @@ struct TransferSaldoView: View {
                     successResult = result
                     showSuccess = true
                 } else {
+                    Haptics.error()
+                    Sound.error()
                     showError = true
                 }
             }
@@ -311,7 +313,7 @@ struct TransferSaldoView: View {
                         .tint(.white)
                 } else {
                     Text("Transfer ke AstraPay")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.app(.s16, weight: .bold))
                         .foregroundStyle(Color.appBackground)
                 }
             }

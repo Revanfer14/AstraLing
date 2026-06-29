@@ -213,6 +213,7 @@ struct PaymentView: View {
     private var bayarButton: some View {
         let enabled = amount > 0 && amount <= vm.balance
         return Button {
+            Haptics.impact(.medium)
             paidAmount = amount
             phase = .processing
             Task {
@@ -224,8 +225,12 @@ struct PaymentView: View {
                     try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
                 }
                 if success {
+                    Haptics.success()
+                    Sound.success()
                     phase = .success
                 } else {
+                    Haptics.error()
+                    Sound.error()
                     phase = .input
                     showError = true
                 }

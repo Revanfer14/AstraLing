@@ -86,7 +86,7 @@ struct QRSayaView: View {
 
             if savedToPhotos {
                 Text("QR berhasil disimpan ke Foto")
-                    .font(.system(size: 13))
+                    .font(.app(.s14))
                     .foregroundStyle(Color.appSuccess)
                     .frame(maxWidth: .infinity)
                     .transition(.opacity)
@@ -114,16 +114,16 @@ struct QRSayaView: View {
                         .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.1), radius: 9, x: 0, y: 6)
                     Image(systemName: "chevron.left")
                         .foregroundStyle(Color.appTextPrimary)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.app(.s16, weight: .semibold))
                 }
             }
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("QR Saya")
-                    .font(.system(size: 18).bold())
+                    .font(.app(.s18, weight: .bold))
                     .foregroundStyle(Color.appTextPrimary)
                 Text("Tunjukkan ke customer untuk membayar")
-                    .font(.system(size: 12))
+                    .font(.app(.s12))
                     .foregroundStyle(Color.appTextTertiary)
             }
         }
@@ -132,13 +132,13 @@ struct QRSayaView: View {
     private var qrCard: some View {
         VStack(spacing: 3) {
             Text(merchantName)
-                .font(.system(size: 24, weight: .bold))
+                .font(.app(.s24, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             Text("NMID : \(nmid)")
-                .font(.system(size: 11.5))
+                .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
                 .frame(maxWidth: .infinity, alignment: .center)
 
@@ -172,13 +172,15 @@ struct QRSayaView: View {
         HStack(spacing: 16) {
             Button {
                 UIImageWriteToSavedPhotosAlbum(brandedQRImage, nil, nil, nil)
+                Haptics.success()
+                Sound.success()
                 withAnimation { savedToPhotos = true }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
                     withAnimation { savedToPhotos = false }
                 }
             } label: {
                 Label("Simpan", systemImage: "square.and.arrow.down")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.app(.s16, weight: .bold))
                     .foregroundStyle(Color.appTextPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
@@ -190,7 +192,7 @@ struct QRSayaView: View {
 
             Button { showShareSheet = true } label: {
                 Label("Bagikan", systemImage: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.app(.s16, weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
