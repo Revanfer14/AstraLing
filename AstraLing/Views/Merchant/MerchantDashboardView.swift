@@ -13,6 +13,7 @@ struct MerchantDashboardView: View {
     @EnvironmentObject var merchantVM: MerchantViewModel
     @AppStorage("selectedRole") private var selectedRoleRaw: String = ""
     @StateObject private var txnVM = TransactionViewModel()
+    @StateObject private var rekapVM = RekapViewModel()
     @State private var selectedPeriod = "7 hari terakhir"
     private let periods = ["7 hari terakhir", "30 hari terakhir"]
 
@@ -94,9 +95,23 @@ struct MerchantDashboardView: View {
             }
         }
         .background(Color.appBackground.ignoresSafeArea())
-        .onAppear { txnVM.startListening() }
-        .onDisappear { txnVM.stopListening() }
+        .onAppear {
+            txnVM.startListening()
+            rekapVM.startListening()
+            rekapVM.setPeriod(daysFor(selectedPeriod))
         }
+        .onDisappear {
+            txnVM.stopListening()
+            rekapVM.stopListening()
+        }
+        .onChange(of: selectedPeriod) { _, newValue in
+            rekapVM.setPeriod(daysFor(newValue))
+        }
+        }
+    }
+
+    private func daysFor(_ period: String) -> Int {
+        period == "7 hari terakhir" ? 7 : 30
     }
 
     private var headerSection: some View {
@@ -293,7 +308,7 @@ struct MerchantDashboardView: View {
                 .font(.app(.s12))
                 .foregroundStyle(Color.appTextTertiary)
 
-            Text("Pukul 16.00 – 19.00")
+            Text(rekapVM.busiestHourLabel)
                 .font(.app(.s18, weight: .bold))
                 .foregroundStyle(Color.appTextPrimary)
                 .padding(.bottom, 11)
@@ -305,41 +320,31 @@ struct MerchantDashboardView: View {
                 .foregroundStyle(Color.appTextTertiary)
                 .padding(.top, 11)
 
-            areaBar(
-                name: "Perumahan Griya",
-                fraction: 0.65,
-                percent: "65%",
-                nameColor: Color.appTextPrimary,
-                barColor: Color.appPrimary,
-                percentColor: Color.appPrimary
-            )
-            .padding(.top, 8)
-
-            areaBar(
-                name: "Jl. Melati Raya",
-                fraction: 0.20,
-                percent: "20%",
-                nameColor: Color.appTextTertiary,
-                barColor: Color.Token.blue300,
-                percentColor: Color.appTextTertiary
-            )
-            .padding(.top, 8)
-
-            areaBar(
-                name: "Cluster Bougenville",
-                fraction: 0.15,
-                percent: "15%",
-                nameColor: Color.appTextTertiary,
-                barColor: Color.Token.blue300,
-                percentColor: Color.appTextTertiary
-            )
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            if rekapVM.areaStats.isEmpty {
+                Text("Belum ada data area")
+                    .font(.app(.s14))
+                    .foregroundStyle(Color.appTextTertiary)
+                    .padding(.top, 8)
+                    .padding(.bottom, 12)
+            } else {
+                ForEach(Array(rekapVM.areaStats.enumerated()), id: \.element.id) { index, stat in
+                    areaBar(
+                        name: stat.name,
+                        fraction: stat.fraction,
+                        percent: stat.percent,
+                        nameColor: index == 0 ? Color.appTextPrimary : Color.appTextTertiary,
+                        barColor: index == 0 ? Color.appPrimary : Color.Token.blue300,
+                        percentColor: index == 0 ? Color.appPrimary : Color.appTextTertiary
+                    )
+                    .padding(.top, 8)
+                    .padding(.bottom, index == rekapVM.areaStats.count - 1 ? 12 : 0)
+                }
+            }
 
             (
-                Text("Selasa, jam 4 sore")
+                Text(rekapVM.insightPrefix)
                     .foregroundStyle(Color.appPrimary)
-                + Text(" area Perumahan Griya selalu ramai, coba pertimbangkan lewat sana.")
+                + Text(rekapVM.insightSuffix)
                     .foregroundStyle(Color.appTextSecondary)
             )
             .font(.app(.s14))
@@ -361,13 +366,13 @@ struct MerchantDashboardView: View {
 
             HStack(spacing: 12) {
                 customerBox(
-                    number: "47",
+                    number: "\(rekapVM.newCustomerCount)",
                     label: "Pelanggan Baru",
                     bgColor: Color.appSurfaceBlue,
                     numberColor: Color.appPrimary
                 )
                 customerBox(
-                    number: "83",
+                    number: "\(rekapVM.loyalCustomerCount)",
                     label: "Pelanggan Setia",
                     bgColor: Color.appSuccessBg,
                     numberColor: Color.appSuccess
