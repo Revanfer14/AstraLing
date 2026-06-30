@@ -14,12 +14,10 @@ struct TambahMenuView: View {
 
     @State private var name: String = ""
     @State private var priceText: String = ""
-    @State private var selectedCategory: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedPhoto: UIImage? = nil
     @FocusState private var priceFocused: Bool
 
-    private let categories = ["Makanan", "Minuman", "Camilan", "Dessert"]
     private let labelColor = Color.appTextSecondary
     private let fieldBg    = Color.appBackground
     private let greyText   = Color.appTextTertiary
@@ -71,31 +69,6 @@ struct TambahMenuView: View {
                             .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 8, x: 0, y: 4)
                     )
                     .onTapGesture { priceFocused = true }
-                }
-
-                fieldBlock(label: "Kategori") {
-                    Menu {
-                        ForEach(categories, id: \.self) { cat in
-                            Button(cat) { selectedCategory = cat }
-                        }
-                    } label: {
-                        HStack {
-                            Text(selectedCategory.isEmpty ? "Pilih kategori" : selectedCategory)
-                                .font(.app(.s16))
-                                .foregroundStyle(selectedCategory.isEmpty ? greyText : darkText)
-                            Spacer()
-                            Image(systemName: "chevron.down")
-                                .font(.app(.s14))
-                                .foregroundStyle(greyText)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(fieldBg)
-                                .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 8, x: 0, y: 4)
-                        )
-                    }
                 }
 
                 Button {

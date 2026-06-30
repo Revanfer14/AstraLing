@@ -48,19 +48,7 @@ final class MerchantDetailViewModel: ObservableObject {
     }
 
     private func grouped(_ items: [MenuItem]) -> [MenuSection] {
-        var order: [String] = []
-        var buckets: [String: [MenuItem]] = [:]
-        for item in items {
-            let raw = item.category?.trimmingCharacters(in: .whitespaces) ?? ""
-            let key = raw.isEmpty ? "Menu" : raw
-            if buckets[key] == nil {
-                order.append(key)
-                buckets[key] = []
-            }
-            buckets[key]!.append(item)
-        }
-        return order.map { key in
-            MenuSection(id: key, title: key.uppercased(), items: buckets[key]!)
-        }
+        if items.isEmpty { return [] }
+        return [MenuSection(id: "Menu", title: "MENU", items: items)]
     }
 }

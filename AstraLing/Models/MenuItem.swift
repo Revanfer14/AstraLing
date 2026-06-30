@@ -12,6 +12,5 @@ struct MenuItem: Identifiable, Codable, Equatable {
     var price: Int
     var status: MenuItemStatus = .tersedia
     var photoUrl: String? = nil
-    var category: String? = nil
     var order: Int
 }

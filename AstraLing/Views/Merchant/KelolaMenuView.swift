@@ -33,13 +33,6 @@ struct KelolaMenuView: View {
                         .padding(.top, 2)
                         .padding(.bottom, 4)
 
-                    if !merchantVM.menuItems.isEmpty {
-                        Text("MAKANAN")
-                            .font(.app(.s12))
-                            .foregroundStyle(Color.appTextTertiary)
-                            .tracking(0.3)
-                    }
-
                     ForEach(merchantVM.menuItems) { item in
                         menuCard(item: item)
                     }
