@@ -332,6 +332,9 @@ struct KelilingModeView: View {
             }
         }
         .onReceive(merchantVM.$cancelledPingAlert.compactMap { $0 }) { ping in
+            if activePing?.id == (ping.id ?? ping.customerUid) {
+                setActivePing(nil)
+            }
             fullScreen = .cancelledPing(ping)
         }
         .onReceive(merchantVM.$newPingAlert.compactMap { $0 }) { ping in
