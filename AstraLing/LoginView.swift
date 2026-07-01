@@ -83,34 +83,34 @@ struct LoginView: View {
                     .font(.footnote)
                     .padding(.top, 4)
                 }
-                
-#if DEBUG
-                Button {
-                    isSeeding = true
-                    Task {
-                        await MockDataSeeder().seedAll()
-                        isSeeding = false
-                    }
-                } label: {
-                    Group {
-                        if isSeeding {
-                            ProgressView()
-                        } else {
-                            Text("Seed Mock Data")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                }
-                .frame(height: 48)
-                .foregroundStyle(Color.blue)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue.opacity(0.5), lineWidth: 1.5)
-                )
-                .disabled(isSeeding)
-#endif
+//                
+//#if DEBUG
+//                Button {
+//                    isSeeding = true
+//                    Task {
+//                        await MockDataSeeder().seedAll()
+//                        isSeeding = false
+//                    }
+//                } label: {
+//                    Group {
+//                        if isSeeding {
+//                            ProgressView()
+//                        } else {
+//                            Text("Seed Mock Data")
+//                                .font(.subheadline.weight(.semibold))
+//                        }
+//                    }
+//                    .padding()
+//                    .frame(maxWidth: .infinity)
+//                }
+//                .frame(height: 48)
+//                .foregroundStyle(Color.blue)
+//                .overlay(
+//                    RoundedRectangle(cornerRadius: 12)
+//                        .stroke(Color.blue.opacity(0.5), lineWidth: 1.5)
+//                )
+//                .disabled(isSeeding)
+//#endif
             }
             .padding(.horizontal, 24)
         }

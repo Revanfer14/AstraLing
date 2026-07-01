@@ -102,26 +102,38 @@ struct MerchantDetailSheet: View {
         .frame(maxWidth: .infinity, alignment: .center)
     }
 
+    private var stripImageUrls: [String] {
+        var urls: [String] = []
+        if let banner = vm.bannerUrl, !banner.isEmpty { urls.append(banner) }
+        let menuPhotos = vm.sections.flatMap { $0.items }
+            .compactMap { $0.photoUrl }
+            .filter { !$0.isEmpty }
+        for p in menuPhotos where !urls.contains(p) && urls.count < 3 {
+            urls.append(p)
+        }
+        return Array(urls.prefix(3))
+    }
+
     private var photoStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                if let urlString = vm.bannerUrl, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image.resizable().scaledToFill()
-                        default:
-                            photoPlaceholderContent
+                ForEach(stripImageUrls, id: \.self) { urlString in
+                    if let url = URL(string: urlString) {
+                        AsyncImage(url: url) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable().scaledToFill()
+                            default:
+                                photoPlaceholderContent
+                            }
                         }
+                        .frame(width: 160, height: 160)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
-                    .frame(width: 160, height: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
+                }
+                ForEach(0 ..< max(0, 3 - stripImageUrls.count), id: \.self) { _ in
                     photoPlaceholderTile
                 }
-
-                photoPlaceholderTile
-                photoPlaceholderTile
             }
         }
     }

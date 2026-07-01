@@ -11,12 +11,18 @@ struct ActivePingCard: View {
     let merchant: NearbyMerchant
     let status: PingStatus
 
+    @StateObject private var vm = ActivePingCardViewModel()
+
+    private var effectiveBannerUrl: String? {
+        vm.bannerUrl ?? merchant.bannerUrl
+    }
+
     var body: some View {
         HStack(spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.white)
-                if let urlString = merchant.bannerUrl, let url = URL(string: urlString) {
+                if let urlString = effectiveBannerUrl, let url = URL(string: urlString) {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let image):
@@ -71,6 +77,7 @@ struct ActivePingCard: View {
         .background(Color.appSurface)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(color: Color.Token.shadowBlueGrey.opacity(0.5), radius: 25, y: 12)
+        .onAppear { vm.load(merchantUid: merchant.id) }
     }
 
     private var placeholderBg: some View {
