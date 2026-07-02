@@ -1194,71 +1194,65 @@ struct KelilingModeView: View {
 
     @ViewBuilder
     private func receivedBubble(_ text: String, time: String) -> some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 3.6) {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(text)
-                    .font(.app(.s14))
-                    .foregroundStyle(Color.appTextPrimary)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack {
-                    Spacer()
-                    Text(time)
-                        .font(.app(.s12))
-                        .foregroundStyle(Color.appTextPrimary.opacity(0.6))
-                }
+                    .font(.system(size: 14))
+                    .foregroundColor(Color(hex: "0E1726"))
+                    .multilineTextAlignment(.leading)
+                Text(time)
+                    .font(.system(size: 9.5))
+                    .foregroundColor(Color(hex: "0E1726").opacity(0.6))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
+            .padding(.horizontal, 15)
+            .padding(.vertical, 11)
+            .background(Color.white)
+            .clipShape(
                 UnevenRoundedRectangle(
-                    topLeadingRadius: 15, bottomLeadingRadius: 5,
-                    bottomTrailingRadius: 15, topTrailingRadius: 15
-                )
-                .fill(Color.white)
-                .overlay(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 15, bottomLeadingRadius: 5,
-                        bottomTrailingRadius: 15, topTrailingRadius: 15
-                    )
-                    .stroke(Color(red: 0.933, green: 0.945, blue: 0.965), lineWidth: 1)
+                    topLeadingRadius: 15,
+                    bottomLeadingRadius: 5,
+                    bottomTrailingRadius: 15,
+                    topTrailingRadius: 15
                 )
             )
-            .frame(maxWidth: 280, alignment: .leading)
-
-            Spacer(minLength: 56)
+            .overlay(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 15,
+                    bottomLeadingRadius: 5,
+                    bottomTrailingRadius: 15,
+                    topTrailingRadius: 15
+                )
+                .stroke(Color(hex: "EEF1F6"), lineWidth: 1)
+            )
+            Spacer(minLength: 60)
         }
         .padding(.top, 10)
     }
 
     @ViewBuilder
     private func sentBubble(_ text: String, time: String) -> some View {
-        HStack(alignment: .bottom) {
-            Spacer(minLength: 56)
-
-            VStack(alignment: .leading, spacing: 3.6) {
+        HStack {
+            Spacer(minLength: 60)
+            VStack(alignment: .trailing, spacing: 3) {
                 Text(text)
-                    .font(.app(.s14))
-                    .foregroundStyle(Color.white)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack {
-                    Spacer()
-                    Text(time)
-                        .font(.app(.s12))
-                        .foregroundStyle(Color.white.opacity(0.6))
-                }
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                Text(time)
+                    .font(.system(size: 9.5))
+                    .foregroundColor(.white.opacity(0.6))
             }
-            .padding(.horizontal, 13)
-            .padding(.vertical, 9)
-            .background(
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.appPrimaryPressed)
+            .clipShape(
                 UnevenRoundedRectangle(
-                    topLeadingRadius: 15, bottomLeadingRadius: 15,
-                    bottomTrailingRadius: 5, topTrailingRadius: 15
+                    topLeadingRadius: 15,
+                    bottomLeadingRadius: 15,
+                    bottomTrailingRadius: 5,
+                    topTrailingRadius: 15
                 )
-                .fill(Color.appPrimaryPressed)
             )
-            .frame(maxWidth: 280, alignment: .leading)
         }
         .padding(.top, 10)
     }
