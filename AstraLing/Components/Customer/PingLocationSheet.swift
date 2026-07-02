@@ -11,7 +11,7 @@ import CoreLocation
 
 struct PingLocationSheet: View {
     let initialCoordinate: CLLocationCoordinate2D?
-    let onSend: (CLLocationCoordinate2D, String?) -> Void
+    let onSend: (CLLocationCoordinate2D, String?, String?) -> Void
     let onCancel: () -> Void
 
     private static let fallback = CLLocationCoordinate2D(latitude: -6.21, longitude: 106.84)
@@ -23,7 +23,7 @@ struct PingLocationSheet: View {
     @State private var addressPrefilled = false
 
     init(initialCoordinate: CLLocationCoordinate2D?,
-         onSend: @escaping (CLLocationCoordinate2D, String?) -> Void,
+         onSend: @escaping (CLLocationCoordinate2D, String?, String?) -> Void,
          onCancel: @escaping () -> Void) {
         self.initialCoordinate = initialCoordinate
         self.onSend = onSend
@@ -202,6 +202,6 @@ struct PingLocationSheet: View {
         let trimmedDetail = detail.trimmingCharacters(in: .whitespaces)
         let parts = [trimmedAddress, trimmedDetail].filter { !$0.isEmpty }
         let note: String? = parts.isEmpty ? nil : parts.joined(separator: " — ")
-        onSend(centerCoordinate, note)
+        onSend(centerCoordinate, note, trimmedDetail.isEmpty ? nil : trimmedDetail)
     }
 }

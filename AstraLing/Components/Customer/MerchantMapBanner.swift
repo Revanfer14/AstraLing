@@ -29,7 +29,8 @@ struct MerchantMapBanner: View {
                     placeholderBg
                 }
             }
-            .frame(width: 150, height: 72)
+            .frame(maxWidth: .infinity)
+            .frame(height: 72)
             .clipped()
 
             HStack(spacing: 5) {
@@ -41,11 +42,12 @@ struct MerchantMapBanner: View {
                     .foregroundColor(.appTextPrimary)
                     .lineLimit(1)
             }
-            .frame(width: 150)
+            .frame(maxWidth: .infinity)
             .padding(.vertical, 7)
             .padding(.horizontal, 10)
             .background(Color.appSurface)
         }
+        .frame(width: 150)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .shadow(color: .black.opacity(0.14), radius: 8, y: 4)
         .overlay(

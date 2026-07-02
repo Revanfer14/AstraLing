@@ -50,7 +50,7 @@ struct MainMapView: View {
                 routeOverlays
             }
             .ignoresSafeArea()
-            .onMapCameraChange(frequency: .onEnd) { context in
+            .onMapCameraChange(frequency: .continuous) { context in
                 mapCenter = context.region.center
             }
             .sheet(isPresented: .constant(true)) {
@@ -123,8 +123,8 @@ struct MainMapView: View {
                         if let selected = selectedMerchant {
                             PingLocationSheet(
                                 initialCoordinate: location.current?.coordinate,
-                                onSend: { coord, note in
-                                    vm.sendPing(to: selected, at: coord, note: note)
+                                onSend: { coord, note, detail in
+                                    vm.sendPing(to: selected, at: coord, note: note, detail: detail)
                                     showPingLocation = false
                                     Haptics.success()
                                     showPingSuccess = true
@@ -143,7 +143,7 @@ struct MainMapView: View {
         }
         .ignoresSafeArea(edges: .top)
         .overlay(alignment: .topTrailing) {
-            if !isFarFromUser {
+            if isFarFromUser {
                 Button {
                     recenterOnUser()
                 } label: {
@@ -162,24 +162,24 @@ struct MainMapView: View {
         }
         .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 12) {
-                #if DEBUG
-                Button {
-                    if debugOverride == nil {
-                        debugOverride = location.current?.coordinate.randomNearby()
-                    } else {
-                        debugOverride = nil
-                    }
-                    vm.setUserLocation(resolvedLocation(location.current))
-                } label: {
-                    Image(systemName: "location.circle.fill")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(debugOverride != nil ? .white : .appPrimary)
-                        .frame(width: 46, height: 46)
-                        .background(debugOverride != nil ? Color.appPrimary : Color.appSurface)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
-                }
-                #endif
+//                #if DEBUG
+//                Button {
+//                    if debugOverride == nil {
+//                        debugOverride = location.current?.coordinate.randomNearby()
+//                    } else {
+//                        debugOverride = nil
+//                    }
+//                    vm.setUserLocation(resolvedLocation(location.current))
+//                } label: {
+//                    Image(systemName: "location.circle.fill")
+//                        .font(.system(size: 17, weight: .bold))
+//                        .foregroundColor(debugOverride != nil ? .white : .appPrimary)
+//                        .frame(width: 46, height: 46)
+//                        .background(debugOverride != nil ? Color.appPrimary : Color.appSurface)
+//                        .clipShape(RoundedRectangle(cornerRadius: 14))
+//                        .shadow(color: .black.opacity(0.1), radius: 6, y: 4)
+//                }
+//                #endif
             }
             .padding(.leading, 24)
             .padding(.bottom, minSheetHeight + 16)
