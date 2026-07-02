@@ -49,6 +49,17 @@ final class MerchantDetailViewModel: ObservableObject {
 
     private func grouped(_ items: [MenuItem]) -> [MenuSection] {
         if items.isEmpty { return [] }
-        return [MenuSection(id: "Menu", title: "MENU", items: items)]
+        var result: [MenuSection] = []
+        for cat in MenuCategory.allCases {
+            let group = items.filter { $0.category == cat }
+            if !group.isEmpty {
+                result.append(MenuSection(id: cat.rawValue, title: cat.label.uppercased(), items: group))
+            }
+        }
+        let uncategorized = items.filter { $0.category == nil }
+        if !uncategorized.isEmpty {
+            result.append(MenuSection(id: "lainnya", title: "LAINNYA", items: uncategorized))
+        }
+        return result
     }
 }

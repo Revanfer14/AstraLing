@@ -245,6 +245,39 @@ struct KelolaMenuView: View {
                 }
             }
 
+            VStack(alignment: .leading, spacing: 3) {
+                Text("KATEGORI")
+                    .font(.app(.s12))
+                    .foregroundStyle(labelColor)
+                    .tracking(0.3)
+                    .padding(.top, 7)
+
+                Menu {
+                    ForEach(MenuCategory.allCases, id: \.self) { cat in
+                        Button(cat.label) {
+                            Task { await merchantVM.setMenuItemCategory(id: id, category: cat) }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(item.category?.label ?? "Pilih kategori")
+                            .font(.app(.s14))
+                            .foregroundStyle(item.category == nil ? labelColor : darkText)
+                        Spacer()
+                        Image(systemName: "chevron.down")
+                            .font(.app(.s12))
+                            .foregroundStyle(labelColor)
+                    }
+                    .frame(height: 38)
+                    .padding(.horizontal, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(Color.white)
+                            .overlay(RoundedRectangle(cornerRadius: 11).stroke(fieldBorder, lineWidth: 1))
+                    )
+                }
+            }
+
             Text("STATUS KETERSEDIAAN")
                 .font(.app(.s12))
                 .foregroundStyle(labelColor)

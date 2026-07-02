@@ -16,6 +16,7 @@ struct TambahMenuView: View {
     @State private var priceText: String = ""
     @State private var selectedPhotoItem: PhotosPickerItem? = nil
     @State private var selectedPhoto: UIImage? = nil
+    @State private var selectedCategory: MenuCategory? = nil
     @FocusState private var priceFocused: Bool
 
     private let labelColor = Color.appTextSecondary
@@ -71,11 +72,36 @@ struct TambahMenuView: View {
                     .onTapGesture { priceFocused = true }
                 }
 
+                fieldBlock(label: "Kategori") {
+                    Menu {
+                        ForEach(MenuCategory.allCases, id: \.self) { cat in
+                            Button(cat.label) { selectedCategory = cat }
+                        }
+                    } label: {
+                        HStack {
+                            Text(selectedCategory?.label ?? "Pilih kategori")
+                                .font(.app(.s16))
+                                .foregroundStyle(selectedCategory == nil ? greyText : darkText)
+                            Spacer()
+                            Image(systemName: "chevron.down")
+                                .font(.app(.s14))
+                                .foregroundStyle(greyText)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .fill(fieldBg)
+                                .shadow(color: Color(red: 0.063, green: 0.133, blue: 0.314).opacity(0.06), radius: 8, x: 0, y: 4)
+                        )
+                    }
+                }
+
                 Button {
                     let price = Int(priceText) ?? 0
-                    guard !name.isEmpty, price > 0 else { return }
+                    guard !name.isEmpty, price > 0, selectedCategory != nil else { return }
                     Task {
-                        await merchantVM.addMenuItem(name: name, price: price, image: selectedPhoto)
+                        await merchantVM.addMenuItem(name: name, price: price, image: selectedPhoto, category: selectedCategory)
                         if merchantVM.errorMessage == nil {
                             Haptics.success()
                             dismiss()
@@ -97,10 +123,10 @@ struct TambahMenuView: View {
                     .padding(.vertical, 16)
                     .background(
                         RoundedRectangle(cornerRadius: 50)
-                            .fill(name.isEmpty || priceText.isEmpty ? Color.appPrimaryPressed.opacity(0.5) : Color.appPrimaryPressed)
+                            .fill(name.isEmpty || priceText.isEmpty || selectedCategory == nil ? Color.appPrimaryPressed.opacity(0.5) : Color.appPrimaryPressed)
                     )
                 }
-                .disabled(name.isEmpty || priceText.isEmpty || merchantVM.isSaving)
+                .disabled(name.isEmpty || priceText.isEmpty || selectedCategory == nil || merchantVM.isSaving)
                 .padding(.top, 28)
                 .padding(.bottom, 32)
             }

@@ -280,7 +280,7 @@ final class MerchantViewModel: ObservableObject {
         }
     }
 
-    func addMenuItem(name: String, price: Int, image: UIImage?) async {
+    func addMenuItem(name: String, price: Int, image: UIImage?, category: MenuCategory? = nil) async {
         guard let uid else { return }
         isSaving = true
         defer { isSaving = false }
@@ -294,6 +294,10 @@ final class MerchantViewModel: ObservableObject {
             "status": MenuItemStatus.tersedia.rawValue,
             "order": nextOrder
         ]
+
+        if let category {
+            data["category"] = category.rawValue
+        }
 
         if let image {
             do {
@@ -398,6 +402,13 @@ final class MerchantViewModel: ObservableObject {
         try? await db.collection("merchants").document(uid)
             .collection("menu").document(id)
             .updateData(["status": status.rawValue])
+    }
+
+    func setMenuItemCategory(id: String, category: MenuCategory) async {
+        guard let uid else { return }
+        try? await db.collection("merchants").document(uid)
+            .collection("menu").document(id)
+            .updateData(["category": category.rawValue])
     }
 
     func deleteMenuItem(id: String) async {
