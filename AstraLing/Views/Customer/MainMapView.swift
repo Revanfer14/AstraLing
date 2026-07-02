@@ -123,8 +123,8 @@ struct MainMapView: View {
                         if let selected = selectedMerchant {
                             PingLocationSheet(
                                 initialCoordinate: location.current?.coordinate,
-                                onSend: { coord, note in
-                                    vm.sendPing(to: selected, at: coord, note: note)
+                                onSend: { coord, note, detail in
+                                    vm.sendPing(to: selected, at: coord, note: note, detail: detail)
                                     showPingLocation = false
                                     Haptics.success()
                                     showPingSuccess = true

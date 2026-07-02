@@ -123,7 +123,8 @@ final class MainMapViewModel: ObservableObject {
 
     func sendPing(to merchant: NearbyMerchant,
                   at coordinate: CLLocationCoordinate2D? = nil,
-                  note: String? = nil) {
+                  note: String? = nil,
+                  detail: String? = nil) {
         guard let uid = Auth.auth().currentUser?.uid else { return }
         guard let coord = coordinate ?? userLocation?.coordinate else { return }
         let ping = Ping(
@@ -148,6 +149,13 @@ final class MainMapViewModel: ObservableObject {
             do {
                 let ref = try db.collection("pings").addDocument(from: ping)
                 lastPingId = ref.documentID
+                if let detail {
+                    let chatId = ChatID.make(customerUid: uid, merchantUid: merchant.id)
+                    let text = "Halo mas, ini detail lokasi saya ya: \(detail)"
+                    let msg = ChatMessage(senderUid: uid, senderRole: .customer, text: text)
+                    try db.collection("chats").document(chatId)
+                        .collection("messages").addDocument(from: msg)
+                }
             } catch {
                 print("sendPing: FAILED \(error)")
             }
