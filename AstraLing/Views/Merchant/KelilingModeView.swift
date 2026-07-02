@@ -1126,6 +1126,7 @@ struct KelilingModeView: View {
                         .padding(.bottom, 16)
                     }
                     .background(Color(red: 0.965, green: 0.969, blue: 0.976))
+                    .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
                     .onChange(of: chatVM.messages.count) { _, _ in
                         if let last = chatVM.messages.last {
                             withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }

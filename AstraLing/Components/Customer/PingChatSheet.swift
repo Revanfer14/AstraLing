@@ -17,6 +17,7 @@ struct PingChatSheet: View {
     let onRequestCancel: () -> Void
 
     @StateObject private var vm = PingChatViewModel()
+    @FocusState private var inputFocused: Bool
     @State private var draft: String = ""
 
     var body: some View {
@@ -235,6 +236,7 @@ struct PingChatSheet: View {
                 .padding(.vertical, 20)
             }
             .background(Color.appSurfaceBlue)
+            .onTapGesture { inputFocused = false }
             .onChange(of: vm.messages.count) { _, _ in
                 if let last = vm.messages.last {
                     withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -335,6 +337,7 @@ struct PingChatSheet: View {
                 TextField("Tulis pesan ke \(merchant.name)…", text: $draft)
                     .font(.system(size: 13.5))
                     .foregroundColor(.appTextPrimary)
+                    .focused($inputFocused)
 
                 Button {
                     vm.send(draft)
