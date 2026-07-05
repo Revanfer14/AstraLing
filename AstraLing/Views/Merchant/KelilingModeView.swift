@@ -463,6 +463,17 @@ struct KelilingModeView: View {
         }
     }
 
+    private func customerLocationLabel(for pin: PinItem) -> String {
+        if let note = pin.note?.trimmingCharacters(in: .whitespaces), !note.isEmpty {
+            let lokasimu = note
+                .components(separatedBy: " \u{2014} ")
+                .first?
+                .trimmingCharacters(in: .whitespaces) ?? note
+            if !lokasimu.isEmpty { return lokasimu }
+        }
+        return locationNames[pin.id] ?? "Memuat lokasi…"
+    }
+
     private var mapLayer: some View {
         let routeCoords: [CLLocationCoordinate2D] = {
             guard let pin = activePing else { return [] }
@@ -967,7 +978,7 @@ struct KelilingModeView: View {
                         )
                         .lineLimit(1)
 
-                        Text("\(locationNames[pin.id] ?? "Memuat lokasi…") · ± \(pin.walkMinutes) mnt")
+                        Text("\(customerLocationLabel(for: pin)) · ± \(pin.walkMinutes) mnt")
                             .font(.app(.s12))
                             .foregroundStyle(Color.appTextTertiary)
                             .lineLimit(1)
