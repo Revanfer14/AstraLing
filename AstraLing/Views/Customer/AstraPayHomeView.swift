@@ -61,17 +61,17 @@ struct AstraPayHomeView: View {
                 .ignoresSafeArea(edges: .top)
             }
 
-            VStack(spacing: 0) {
-                Spacer()
-                CustomerQRISButton()
-                    .padding(.bottom, 44)
-            }
-
             CustomerTabBar(selection: $selectedTab, onProfil: {
                 Haptics.warning()
                 authViewModel.logout()
                 selectedRoleRaw = ""
             })
+            
+            VStack(spacing: 0) {
+                Spacer()
+                CustomerQRISButton()
+                    .padding(.bottom, 0)
+            }
         }
         .onAppear { homeVM.load() }
         .fullScreenCover(isPresented: $showAstraLing, onDismiss: {
