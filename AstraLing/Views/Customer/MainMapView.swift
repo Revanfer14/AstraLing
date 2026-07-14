@@ -49,6 +49,7 @@ struct MainMapView: View {
                 merchantAnnotations
                 routeOverlays
             }
+            .mapControlVisibility(.hidden)
             .ignoresSafeArea()
             .onMapCameraChange(frequency: .continuous) { context in
                 mapCenter = context.region.center
